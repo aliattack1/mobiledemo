@@ -3,685 +3,257 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voice Asustant</title>
+    <title>Audio Recorder</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .waveform {
-            background: linear-gradient(90deg, #3b82f6 0%, #3b82f6 var(--progress, 0%), #e5e7eb var(--progress, 0%), #e5e7eb 100%);
-            transition: background 0.3s ease;
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
-        .pulse {
+        .recording-animation {
             animation: pulse 1.5s infinite;
         }
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
-            }
-            70% {
-                transform: scale(1.02);
-                box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
-            }
-            100% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
-            }
+        .waveform {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
         }
-        .result-container {
-            max-height: 200px;
-            overflow-y: auto;
-            font-family: monospace;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        .progress-slider {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 4px;
+        .wave-bar {
+            width: 4px;
+            height: 10px;
+            background-color: #3B82F6;
             border-radius: 2px;
-            background: #e5e7eb;
-            outline: none;
-            margin: 8px 0;
-        }
-        .progress-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: #3b82f6;
-            cursor: pointer;
-        }
-        .progress-slider::-moz-range-thumb {
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: #3b82f6;
-            cursor: pointer;
-        }
-        .volume-slider {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 4px;
-            border-radius: 2px;
-            background: #e5e7eb;
-            outline: none;
-        }
-        .volume-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: #3b82f6;
-            cursor: pointer;
-        }
-        .volume-slider::-moz-range-thumb {
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: #3b82f6;
-            cursor: pointer;
-        }
-        .speed-btn {
-            transition: all 0.2s ease;
-        }
-        .speed-btn.active {
-            background-color: #3b82f6;
-            color: white;
-        }
-        .progress-slider-container {
-            position: relative;
-            width: 100%;
-        }
-        .progress-slider-bg {
-            position: absolute;
-            top: 50%;
-            left: 0;
-            height: 4px;
-            background-color: #3b82f6;
-            transform: translateY(-50%);
-            pointer-events: none;
-            border-radius: 2px;
-        }
-        .blob-url {
-            word-break: break-all;
-            font-size: 0.8rem;
-            color: #3b82f6;
-        }
-        .permission-denied {
-            animation: shake 0.5s;
-        }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-5px); }
-            40%, 80% { transform: translateX(5px); }
+            transition: height 0.2s ease;
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4 font-sans">
-    <div class="bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-md border border-gray-200">
-        <!-- Header -->
-        <div class="bg-blue-500 p-6 text-white">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold">Voice Assistant</h1>
-                    <p class="text-white/80 mt-1">Caspian Solutions</p>
-                </div>
-                <div class="bg-white/20 p-3 rounded-full">
-                    <i class="fas fa-robot text-xl"></i>
-                </div>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+        <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">Audio Recorder</h1>
+        
+        <div class="mb-6">
+            <div id="permissionStatus" class="hidden mb-4 p-3 rounded-lg text-sm"></div>
+            
+            <div id="waveform" class="waveform hidden">
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+            </div>
+            
+            <div id="audioPlayerContainer" class="hidden mt-4">
+                <audio id="audioPlayer" controls class="w-full"></audio>
             </div>
         </div>
         
-        <!-- Recording Interface -->
-        <div class="p-6">
-            <div class="text-center mb-6">
-                <p class="text-gray-600">Record your voice to generate a byte array for Python</p>
-                <div id="permissionWarning" class="hidden mt-2 text-sm text-red-600 bg-red-50 p-2 rounded">
-                    <i class="fas fa-exclamation-circle mr-1"></i>
-                    Microphone permission denied. Please allow access to continue.
-                </div>
-            </div>
+        <div class="flex flex-col space-y-4">
+            <button id="recordButton" class="bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-lg font-medium flex items-center justify-center space-x-2 transition-colors">
+                <i class="fas fa-microphone"></i>
+                <span>Start Recording</span>
+            </button>
             
-            <div class="waveform h-12 rounded-lg mb-4" id="waveform"></div>
+            <button id="sendButton" disabled class="bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-lg font-medium flex items-center justify-center space-x-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                <i class="fas fa-paper-plane"></i>
+                <span>Send to API</span>
+            </button>
             
-            <div class="flex items-center justify-between mb-6 text-sm">
-                <div class="text-gray-500 flex items-center">
-                    <i class="fas fa-clock mr-2"></i>
-                    <span id="timer">00:00</span>
-                </div>
-                <div class="text-gray-500 flex items-center">
-                    <i class="fas fa-file-audio mr-2"></i>
-                    <span id="fileSize">0 KB</span>
-                </div>
-            </div>
-            
-            <!-- Main Controls -->
-            <div class="flex flex-col space-y-4">
-                <button id="recordButton" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-6 rounded-full flex items-center justify-center space-x-3 transition-all duration-300 shadow-md">
-                    <i class="fas fa-microphone text-xl"></i>
-                    <span class="text-lg">Start Recording</span>
-                </button>
-                
-                <div id="playbackControls" class="hidden bg-gray-50 p-4 rounded-lg">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="font-medium text-gray-700">Your Recording</h3>
-                        <button id="deleteButton" class="text-red-500 hover:text-red-700 text-sm flex items-center">
-                            <i class="fas fa-trash mr-1"></i>
-                            Delete
-                        </button>
-                    </div>
-                    
-                    <!-- Enhanced Player Controls -->
-                    <div class="mb-4">
-                        <!-- Progress Slider -->
-                        <div class="progress-slider-container">
-                            <div class="progress-slider-bg" id="progressSliderBg"></div>
-                            <input type="range" min="0" max="100" value="0" class="progress-slider" id="progressSlider">
-                        </div>
-                        
-                        <div class="flex items-center justify-between text-xs text-gray-500 mb-4">
-                            <span id="currentTime">00:00</span>
-                            <span id="duration">00:00</span>
-                        </div>
-                        
-                        <!-- Main Controls -->
-                        <div class="flex items-center justify-center space-x-4 mb-4">
-                            <button id="rewindButton" class="bg-white hover:bg-gray-100 text-gray-800 p-2 rounded-full shadow border border-gray-200">
-                                <i class="fas fa-backward"></i>
-                            </button>
-                            <button id="playButton" class="bg-white hover:bg-gray-100 text-gray-800 p-4 rounded-full shadow border border-gray-200">
-                                <i class="fas fa-play"></i>
-                            </button>
-                            <button id="forwardButton" class="bg-white hover:bg-gray-100 text-gray-800 p-2 rounded-full shadow border border border-gray-200">
-                                <i class="fas fa-forward"></i>
-                            </button>
-                        </div>
-                        
-                        <!-- Volume Controls -->
-                        <div class="flex items-center space-x-2 mb-4">
-                            <i class="fas fa-volume-down text-gray-500"></i>
-                            <input type="range" min="0", max="1" step="0.01" value="1" class="volume-slider" id="volumeSlider">
-                            <i class="fas fa-volume-up text-gray-500"></i>
-                        </div>
-                        
-                        <!-- Playback Speed -->
-                        <div class="flex justify-center space-x-2">
-                            <button class="speed-btn px-3 py-1 text-xs rounded-full border border-gray-300" data-speed="0.5">0.5x</button>
-                            <button class="speed-btn px-3 py-1 text-xs rounded-full border border-gray-300 active" data-speed="1">1x</button>
-                            <button class="speed-btn px-3 py-1 text-xs rounded-full border border-gray-300" data-speed="1.5">1.5x</button>
-                            <button class="speed-btn px-3 py-1 text-xs rounded-full border border-gray-300" data-speed="2">2x</button>
-                        </div>
-                    </div>
-                    
-                    <div id="audioInfoContainer" class="mb-4">
-                        <p class="text-xs text-gray-500 mb-1">Audio Format:</p>
-                        <p class="text-sm">WAV (16-bit PCM, 44.1kHz)</p>
-                    </div>
-                    
-                    <button id="convertButton" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-full flex items-center justify-center space-x-2 transition-all">
-                        <i class="fas fa-code"></i>
-                        <span>Convert to Bytes</span>
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Bytes Result Display -->
-            <div id="bytesResultContainer" class="mt-6 hidden">
-                <div class="flex items-center justify-between mb-2">
-                    <h3 class="font-medium text-gray-700">Python Byte Array</h3>
-                    <button id="copyBytesButton" class="text-blue-600 hover:text-blue-800 text-sm flex items-center">
-                        <i class="fas fa-copy mr-1"></i>
-                        Copy
-                    </button>
-                </div>
-                <div id="bytesResult" class="result-container bg-gray-50 p-3 rounded-lg text-sm border border-gray-200"></div>
-                
-                <div class="mt-4">
-                    <button id="downloadButton" class="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-6 rounded-full flex items-center justify-center space-x-2 transition-all">
-                        <i class="fas fa-download mr-1"></i>
-                        <span>Download as voice.py</span>
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Status Messages -->
-            <div id="statusMessage" class="mt-6 text-center text-sm hidden p-3 rounded-lg"></div>
-            
-            <!-- Footer -->
-            <div class="mt-8 pt-4 border-t border-gray-100 text-center">
-                <p class="text-xs text-gray-500">Voice to Bytes Converter © 2023</p>
+            <div id="apiResponse" class="hidden mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 class="font-medium text-gray-700 mb-2">API Response:</h3>
+                <pre id="responseText" class="text-sm text-gray-600 overflow-auto max-h-40"></pre>
             </div>
         </div>
     </div>
+    
+    <div id="statusToast" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg opacity-0 transition-opacity duration-300"></div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Elements
             const recordButton = document.getElementById('recordButton');
-            const playButton = document.getElementById('playButton');
-            const rewindButton = document.getElementById('rewindButton');
-            const forwardButton = document.getElementById('forwardButton');
-            const deleteButton = document.getElementById('deleteButton');
-            const convertButton = document.getElementById('convertButton');
-            const downloadButton = document.getElementById('downloadButton');
-            const playbackControls = document.getElementById('playbackControls');
-            const bytesResultContainer = document.getElementById('bytesResultContainer');
-            const bytesResult = document.getElementById('bytesResult');
-            const copyBytesButton = document.getElementById('copyBytesButton');
-            const timer = document.getElementById('timer');
-            const fileSize = document.getElementById('fileSize');
+            const sendButton = document.getElementById('sendButton');
+            const audioPlayer = document.getElementById('audioPlayer');
+            const audioPlayerContainer = document.getElementById('audioPlayerContainer');
             const waveform = document.getElementById('waveform');
-            const statusMessage = document.getElementById('statusMessage');
-            const permissionWarning = document.getElementById('permissionWarning');
-            const progressSlider = document.getElementById('progressSlider');
-            const progressSliderBg = document.getElementById('progressSliderBg');
-            const currentTimeDisplay = document.getElementById('currentTime');
-            const durationDisplay = document.getElementById('duration');
-            const volumeSlider = document.getElementById('volumeSlider');
-            const speedButtons = document.querySelectorAll('.speed-btn');
+            const permissionStatus = document.getElementById('permissionStatus');
+            const apiResponse = document.getElementById('apiResponse');
+            const responseText = document.getElementById('responseText');
+            const statusToast = document.getElementById('statusToast');
             
-            // Variables
             let mediaRecorder;
             let audioChunks = [];
             let audioBlob;
-            let audioUrl;
-            let audio = new Audio();
-            let recordingInterval;
-            let seconds = 0;
-            let isRecording = false;
-            let progressInterval;
-            let currentSpeed = 1;
-            let isDraggingProgress = false;
-            let permissionGranted = false;
+            let animationInterval;
+            const waveBars = document.querySelectorAll('.wave-bar');
             
-            // Check microphone permission on page load
+            // Check microphone permission status
             checkMicrophonePermission();
             
-            // Function to check microphone permission
+            // Request microphone access when page loads
             async function checkMicrophonePermission() {
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     stream.getTracks().forEach(track => track.stop());
-                    permissionGranted = true;
-                    permissionWarning.classList.add('hidden');
+                    
+                    permissionStatus.classList.remove('hidden', 'bg-red-100', 'text-red-700');
+                    permissionStatus.classList.add('bg-green-100', 'text-green-700');
+                    permissionStatus.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Microphone access granted';
                 } catch (error) {
-                    permissionGranted = false;
-                    permissionWarning.classList.remove('hidden');
+                    permissionStatus.classList.remove('hidden', 'bg-green-100', 'text-green-700');
+                    permissionStatus.classList.add('bg-red-100', 'text-red-700');
+                    permissionStatus.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i> Microphone access denied. Please allow microphone access to use this app.';
+                    recordButton.disabled = true;
                 }
+                permissionStatus.classList.remove('hidden');
             }
             
-            // Update timer display
-            function updateTimer() {
-                const minutes = Math.floor(seconds / 60).toString().padStart(2, '0');
-                const remainingSeconds = (seconds % 60).toString().padStart(2, '0');
-                timer.textContent = `${minutes}:${remainingSeconds}`;
-                seconds++;
-                
-                // Update waveform visualization
-                const progress = Math.min(seconds * 0.5, 100);
-                waveform.style.setProperty('--progress', `${progress}%`);
-                
-                // Estimate file size (very rough approximation)
-                const estimatedSize = (seconds * 10).toFixed(0); // KB
-                fileSize.textContent = `${estimatedSize} KB`;
-            }
-            
-            // Format time (seconds to MM:SS)
-            function formatTime(seconds) {
-                const mins = Math.floor(seconds / 60);
-                const secs = Math.floor(seconds % 60);
-                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-            }
-            
-            // Update progress slider
-            function updateProgress() {
-                if (audio.duration && !isDraggingProgress) {
-                    const progress = (audio.currentTime / audio.duration) * 100;
-                    progressSlider.value = progress;
-                    progressSliderBg.style.width = `${progress}%`;
-                    currentTimeDisplay.textContent = formatTime(audio.currentTime);
-                }
-            }
-            
-            // Start progress tracking
-            function startProgressTracking() {
-                clearInterval(progressInterval);
-                progressInterval = setInterval(updateProgress, 100);
-                updateProgress();
-            }
-            
-            // Stop progress tracking
-            function stopProgressTracking() {
-                clearInterval(progressInterval);
-            }
-            
-            // Start recording
-            async function startRecording() {
-                if (!permissionGranted) {
-                    showStatus('Microphone permission denied. Please allow access.', 'error');
-                    permissionWarning.classList.remove('hidden');
-                    permissionWarning.classList.add('permission-denied');
-                    setTimeout(() => {
-                        permissionWarning.classList.remove('permission-denied');
-                    }, 500);
-                    return;
-                }
-                
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ 
-                        audio: {
-                            echoCancellation: true,
-                            noiseSuppression: true,
-                            sampleRate: 44100,
-                            channelCount: 1
-                        } 
-                    });
-                    
-                    mediaRecorder = new MediaRecorder(stream, {
-                        mimeType: 'audio/wav',
-                        audioBitsPerSecond: 128000
-                    });
-                    
-                    audioChunks = [];
-                    
-                    mediaRecorder.ondataavailable = (event) => {
-                        audioChunks.push(event.data);
-                    };
-                    
-                    mediaRecorder.onstop = () => {
-                        audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                        audioUrl = URL.createObjectURL(audioBlob);
-                        audio.src = audioUrl;
-                        
-                        // Show playback controls
-                        playbackControls.classList.remove('hidden');
-                        
-                        // Reset timer but keep the final time
-                        clearInterval(recordingInterval);
-                        
-                        // Set up audio event listeners
-                        audio.addEventListener('loadedmetadata', () => {
-                            durationDisplay.textContent = formatTime(audio.duration);
-                        });
-                        
-                        audio.addEventListener('timeupdate', updateProgress);
-                    };
-                    
-                    mediaRecorder.start();
-                    isRecording = true;
-                    recordButton.innerHTML = '<i class="fas fa-stop"></i><span>Stop Recording</span>';
-                    recordButton.classList.add('pulse');
-                    
-                    // Start timer
-                    seconds = 0;
-                    recordingInterval = setInterval(updateTimer, 1000);
-                    updateTimer();
-                    
-                    showStatus('Recording started... Speak now', 'info');
-                    
-                } catch (error) {
-                    console.error('Error accessing microphone:', error);
-                    showStatus('Error accessing microphone: ' + error.message, 'error');
-                    permissionGranted = false;
-                    permissionWarning.classList.remove('hidden');
-                }
-            }
-            
-            // Stop recording
-            function stopRecording() {
-                if (mediaRecorder && isRecording) {
-                    mediaRecorder.stop();
-                    isRecording = false;
-                    recordButton.innerHTML = '<i class="fas fa-microphone"></i><span>Start Recording</span>';
-                    recordButton.classList.remove('pulse');
-                    
-                    // Stop all tracks
-                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
-                    
-                    showStatus('Recording complete', 'success');
-                }
-            }
-            
-            // Play recorded audio
-            function togglePlayback() {
-                if (audioUrl) {
-                    if (audio.paused) {
-                        audio.play();
-                        playButton.innerHTML = '<i class="fas fa-pause"></i>';
-                        startProgressTracking();
-                    } else {
-                        audio.pause();
-                        playButton.innerHTML = '<i class="fas fa-play"></i>';
-                        stopProgressTracking();
-                    }
-                }
-            }
-            
-            // Rewind 10 seconds
-            function rewind() {
-                if (audioUrl) {
-                    audio.currentTime = Math.max(0, audio.currentTime - 10);
-                    updateProgress();
-                }
-            }
-            
-            // Forward 10 seconds
-            function forward() {
-                if (audioUrl) {
-                    audio.currentTime = Math.min(audio.duration, audio.currentTime + 10);
-                    updateProgress();
-                }
-            }
-            
-            // Delete recording
-            deleteButton.addEventListener('click', () => {
-                audioChunks = [];
-                audioBlob = null;
-                if (audioUrl) {
-                    URL.revokeObjectURL(audioUrl);
-                    audioUrl = null;
-                }
-                audio.pause();
-                playbackControls.classList.add('hidden');
-                bytesResultContainer.classList.add('hidden');
-                timer.textContent = '00:00';
-                fileSize.textContent = '0 KB';
-                waveform.style.setProperty('--progress', '0%');
-                stopProgressTracking();
-                progressSlider.value = 0;
-                progressSliderBg.style.width = '0%';
-                showStatus('Recording deleted', 'info');
-            });
-            
-            // Convert blob to bytes array for Python
-            async function convertToBytes() {
-                if (!audioBlob) {
-                    showStatus('No recording to convert', 'error');
-                    return;
-                }
-                
-                showStatus('Converting audio to bytes...', 'info');
-                convertButton.disabled = true;
-                convertButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Converting...</span>';
-                
-                try {
-                    // Read the blob as ArrayBuffer
-                    const arrayBuffer = await audioBlob.arrayBuffer();
-                    
-                    // Convert to Uint8Array
-                    const uint8Array = new Uint8Array(arrayBuffer);
-                    
-                    // Convert to Python bytes string
-                    let bytesString = 'voice = bytes([\n    ';
-                    const chunkSize = 16;
-                    
-                    for (let i = 0; i < uint8Array.length; i++) {
-                        bytesString += uint8Array[i];
-                        
-                        if (i < uint8Array.length - 1) {
-                            bytesString += ', ';
-                            
-                            // Add line breaks for readability
-                            if ((i + 1) % chunkSize === 0) {
-                                bytesString += '\n    ';
-                            }
-                        }
-                    }
-                    
-                    bytesString += '\n])';
-                    
-                    // Display the result
-                    bytesResult.textContent = bytesString;
-                    bytesResultContainer.classList.remove('hidden');
-                    showStatus('Conversion complete', 'success');
-                    
-                } catch (error) {
-                    console.error('Error converting audio:', error);
-                    showStatus('Error converting audio: ' + error.message, 'error');
-                } finally {
-                    convertButton.disabled = false;
-                    convertButton.innerHTML = '<i class="fas fa-code"></i><span>Convert to Bytes</span>';
-                }
-            }
-            
-            // Download as Python file
-            downloadButton.addEventListener('click', () => {
-                if (!bytesResult.textContent) {
-                    showStatus('No bytes to download', 'error');
-                    return;
-                }
-                
-                const blob = new Blob([bytesResult.textContent], { type: 'text/x-python' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'voice.py';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                
-                showStatus('File downloaded as voice.py', 'success');
-            });
-            
-            // Copy bytes to clipboard
-            copyBytesButton.addEventListener('click', () => {
-                navigator.clipboard.writeText(bytesResult.textContent)
-                    .then(() => {
-                        const originalText = copyBytesButton.innerHTML;
-                        copyBytesButton.innerHTML = '<i class="fas fa-check mr-1"></i>Copied!';
-                        setTimeout(() => {
-                            copyBytesButton.innerHTML = originalText;
-                        }, 2000);
-                    })
-                    .catch(err => {
-                        console.error('Failed to copy text: ', err);
-                    });
-            });
-            
-            // Toggle recording
-            recordButton.addEventListener('click', () => {
-                if (isRecording) {
+            // Start/stop recording
+            recordButton.addEventListener('click', async () => {
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
                     stopRecording();
                 } else {
                     startRecording();
                 }
             });
             
-            // Play button click
-            playButton.addEventListener('click', togglePlayback);
-            
-            // Rewind button click
-            rewindButton.addEventListener('click', rewind);
-            
-            // Forward button click
-            forwardButton.addEventListener('click', forward);
-            
-            // Volume control
-            volumeSlider.addEventListener('input', () => {
-                audio.volume = volumeSlider.value;
-            });
-            
-            // Progress slider events
-            progressSlider.addEventListener('input', () => {
-                isDraggingProgress = true;
-                const progress = progressSlider.value;
-                progressSliderBg.style.width = `${progress}%`;
+            // Send recording to API
+            sendButton.addEventListener('click', async () => {
+                if (!audioBlob) {
+                    showToast('No recording to send', 'error');
+                    return;
+                }
                 
-                if (audio.duration) {
-                    const newTime = (progress / 100) * audio.duration;
-                    currentTimeDisplay.textContent = formatTime(newTime);
-                }
-            });
-            
-            progressSlider.addEventListener('change', () => {
-                if (audio.duration) {
-                    const progress = progressSlider.value;
-                    audio.currentTime = (progress / 100) * audio.duration;
-                }
-                isDraggingProgress = false;
-            });
-            
-            progressSlider.addEventListener('mousedown', () => {
-                isDraggingProgress = true;
-            });
-            
-            progressSlider.addEventListener('mouseup', () => {
-                isDraggingProgress = false;
-            });
-            
-            // Playback speed controls
-            speedButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    // Remove active class from all buttons
-                    speedButtons.forEach(btn => btn.classList.remove('active'));
+                try {
+                    sendButton.disabled = true;
+                    sendButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Sending...';
                     
-                    // Add active class to clicked button
-                    button.classList.add('active');
+                    const formData = new FormData();
+                    formData.append('voice', audioBlob, 'recording.m4a');
                     
-                    // Set playback speed
-                    currentSpeed = parseFloat(button.dataset.speed);
-                    audio.playbackRate = currentSpeed;
-                });
+                    const response = await fetch('https://zany-sniffle-rx9444j5gjqcrvr-8000.app.github.dev/number', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.text();
+                    
+                    apiResponse.classList.remove('hidden');
+                    responseText.textContent = result;
+                    
+                    showToast('Recording sent successfully!', 'success');
+                } catch (error) {
+                    console.error('Error sending to API:', error);
+                    showToast('Failed to send recording', 'error');
+                } finally {
+                    sendButton.disabled = false;
+                    sendButton.innerHTML = '<i class="fas fa-paper-plane mr-2"></i> Send to API';
+                }
             });
             
-            // Convert button click
-            convertButton.addEventListener('click', convertToBytes);
-            
-            // Show status message
-            function showStatus(message, type) {
-                statusMessage.textContent = message;
-                statusMessage.classList.remove('hidden');
-                
-                // Set color based on type
-                statusMessage.className = 'mt-6 text-center text-sm p-3 rounded-lg';
-                if (type === 'success') {
-                    statusMessage.classList.add('bg-green-50', 'text-green-700');
-                } else if (type === 'error') {
-                    statusMessage.classList.add('bg-red-50', 'text-red-700');
-                } else if (type === 'info') {
-                    statusMessage.classList.add('bg-blue-50', 'text-blue-700');
-                }
-                
-                // Hide after 5 seconds if it's not an important message
-                if (type !== 'info') {
-                    setTimeout(() => {
-                        statusMessage.classList.add('hidden');
-                    }, 5000);
+            async function startRecording() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    
+                    mediaRecorder.ondataavailable = event => {
+                        audioChunks.push(event.data);
+                    };
+                    
+                    mediaRecorder.onstop = () => {
+                        audioBlob = new Blob(audioChunks, { type: 'audio/mp4' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        audioPlayer.src = audioUrl;
+                        audioPlayerContainer.classList.remove('hidden');
+                        sendButton.disabled = false;
+                        
+                        // Clear animation
+                        clearInterval(animationInterval);
+                        waveBars.forEach(bar => bar.style.height = '10px');
+                    };
+                    
+                    audioChunks = [];
+                    mediaRecorder.start();
+                    
+                    // Update UI
+                    recordButton.classList.add('bg-red-500', 'hover:bg-red-600', 'recording-animation');
+                    recordButton.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+                    recordButton.innerHTML = '<i class="fas fa-stop mr-2"></i> Stop Recording';
+                    waveform.classList.remove('hidden');
+                    
+                    // Start waveform animation
+                    animateWaveform();
+                    
+                    showToast('Recording started', 'info');
+                } catch (error) {
+                    console.error('Error starting recording:', error);
+                    showToast('Failed to start recording', 'error');
                 }
             }
             
-            // Audio ended event
-            audio.addEventListener('ended', () => {
-                playButton.innerHTML = '<i class="fas fa-play"></i>';
-                stopProgressTracking();
-            });
+            function stopRecording() {
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    mediaRecorder.stop();
+                    
+                    // Stop all tracks
+                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                    
+                    // Update UI
+                    recordButton.classList.remove('bg-red-500', 'hover:bg-red-600', 'recording-animation');
+                    recordButton.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                    recordButton.innerHTML = '<i class="fas fa-microphone mr-2"></i> Start Recording';
+                    
+                    showToast('Recording stopped', 'info');
+                }
+            }
             
-            // Initialize volume
-            audio.volume = 1;
+            function animateWaveform() {
+                clearInterval(animationInterval);
+                
+                animationInterval = setInterval(() => {
+                    waveBars.forEach(bar => {
+                        const height = Math.floor(Math.random() * 40) + 10;
+                        bar.style.height = `${height}px`;
+                    });
+                }, 100);
+            }
+            
+            function showToast(message, type) {
+                statusToast.textContent = message;
+                
+                // Set color based on type
+                statusToast.classList.remove('bg-gray-800', 'bg-green-500', 'bg-red-500', 'bg-blue-500');
+                switch (type) {
+                    case 'success':
+                        statusToast.classList.add('bg-green-500');
+                        break;
+                    case 'error':
+                        statusToast.classList.add('bg-red-500');
+                        break;
+                    case 'info':
+                        statusToast.classList.add('bg-blue-500');
+                        break;
+                    default:
+                        statusToast.classList.add('bg-gray-800');
+                }
+                
+                // Show toast
+                statusToast.classList.remove('opacity-0');
+                statusToast.classList.add('opacity-100');
+                
+                // Hide after 3 seconds
+                setTimeout(() => {
+                    statusToast.classList.remove('opacity-100');
+                    statusToast.classList.add('opacity-0');
+                }, 3000);
+            }
         });
     </script>
 </body>
