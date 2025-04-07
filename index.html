@@ -149,6 +149,11 @@
                         body: formData
                     });
                     
+                    // Check if response is successful
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
                     // Get the text result from headers
                     const textResult = response.headers.get('result');
                     
