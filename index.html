@@ -29,6 +29,10 @@
             border-radius: 2px;
             transition: height 0.2s ease;
         }
+        .response-audio {
+            width: 100%;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
@@ -69,7 +73,8 @@
             
             <div id="apiResponse" class="hidden mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <h3 class="font-medium text-gray-700 mb-2">API Response:</h3>
-                <pre id="responseText" class="text-sm text-gray-600 overflow-auto max-h-40"></pre>
+                <div id="responseText" class="text-sm text-gray-600 mb-2"></div>
+                <audio id="responseAudio" controls class="response-audio hidden"></audio>
             </div>
         </div>
     </div>
@@ -86,6 +91,7 @@
             const permissionStatus = document.getElementById('permissionStatus');
             const apiResponse = document.getElementById('apiResponse');
             const responseText = document.getElementById('responseText');
+            const responseAudio = document.getElementById('responseAudio');
             const statusToast = document.getElementById('statusToast');
             
             let mediaRecorder;
@@ -143,14 +149,29 @@
                         body: formData
                     });
                     
-                    const result = await response.text();
+                    // Get the text result from headers
+                    const textResult = response.headers.get('result');
                     
+                    // Get the audio bytes from the response
+                    const audioBytes = await response.blob();
+                    
+                    // Display the results
                     apiResponse.classList.remove('hidden');
-                    responseText.textContent = result;
+                    responseText.textContent = textResult || 'No text result received';
+                    
+                    if (audioBytes.size > 0) {
+                        const audioUrl = URL.createObjectURL(audioBytes);
+                        responseAudio.src = audioUrl;
+                        responseAudio.classList.remove('hidden');
+                    } else {
+                        responseAudio.classList.add('hidden');
+                    }
                     
                     showToast('Recording sent successfully!', 'success');
                 } catch (error) {
                     console.error('Error sending to API:', error);
+                    responseText.textContent = 'Error: ' + error.message;
+                    apiResponse.classList.remove('hidden');
                     showToast('Failed to send recording', 'error');
                 } finally {
                     sendButton.disabled = false;
