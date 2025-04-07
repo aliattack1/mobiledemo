@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caspian Solutions AI Voice Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .waveform {
+            background: linear-gradient(90deg, #1e3a8a 0%, #1e3a8a var(--progress, 0%), #e5e7eb var(--progress, 0%), #e5e7eb 100%);
+            transition: background 0.3s ease;
+        }
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(30, 58, 138, 0.4);
+            }
+            70% {
+                transform: scale(1.02);
+                box-shadow: 0 0 0 10px rgba(30, 58, 138, 0);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(30, 58, 138, 0);
+            }
+        }
+        .caspian-gradient {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        }
+        .result-container {
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .progress-bar {
+            background: linear-gradient(90deg, #3b82f6 0%, #3b82f6 var(--progress, 0%), #e5e7eb var(--progress, 0%), #e5e7eb 100%);
+            transition: background 0.1s linear;
+        }
+        .volume-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: #e5e7eb;
+            outline: none;
+        }
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+        }
+        .volume-slider::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+        }
+        .speed-btn {
+            transition: all 0.2s ease;
+        }
+        .speed-btn.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4 font-sans">
+    <div class="bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-md border border-gray-200">
+        <!-- Bank Header -->
+        <div class="caspian-gradient p-6 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold">Caspian Solutions</h1>
+                    <p class="text-white/80 mt-1">Banking AI Voice Assistant</p>
+                </div>
+                <div class="bg-white/20 p-3 rounded-full">
+                    <i class="fas fa-robot text-xl"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recording Interface -->
+        <div class="p-6">
+            <div class="text-center mb-6">
+                <p class="text-gray-600">Press the button below to record your banking voice command</p>
+            </div>
+            
+            <div class="waveform h-12 rounded-lg mb-4" id="waveform"></div>
+            
+            <div class="flex items-center justify-between mb-6 text-sm">
+                <div class="text-gray-500 flex items-center">
+                    <i class="fas fa-clock mr-2"></i>
+                    <span id="timer">00:00</span>
+                </div>
+                <div class="text-gray-500 flex items-center">
+                    <i class="fas fa-file-audio mr-2"></i>
+                    <span id="fileSize">0 MB</span>
+                </div>
+            </div>
+            
+            <!-- Main Controls -->
+            <div class="flex flex-col space-y-4">
+                <button id="recordButton" class="caspian-gradient hover:opacity-90 text-white font-bold py-4 px-6 rounded-full flex items-center justify-center space-x-3 transition-all duration-300 shadow-md">
+                    <i class="fas fa-microphone text-xl"></i>
+                    <span class="text-lg">Start Recording</span>
+                </button>
+                
+                <div id="playbackControls" class="hidden bg-gray-50 p-4 rounded-lg">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-medium text-gray-700">Your Recording</h3>
+                        <button id="deleteButton" class="text-red-500 hover:text-red-700 text-sm flex items-center">
+                            <i class="fas fa-trash mr-1"></i>
+                            Delete
+                        </button>
+                    </div>
+                    
+                    <!-- Enhanced Player Controls -->
+                    <div class="mb-4">
+                        <!-- Progress Bar -->
+                        <div class="progress-bar h-2 rounded-full mb-3" id="progressBar"></div>
+                        
+                        <div class="flex items-center justify-between text-xs text-gray-500 mb-4">
+                            <span id="currentTime">00:00</span>
+                            <span id="duration">00:00</span>
+                        </div>
+                        
+                        <!-- Main Controls -->
+                        <div class="flex items-center justify-center space-x-4 mb-4">
+                            <button id="rewindButton" class="bg-white hover:bg-gray-100 text-gray-800 p-2 rounded-full shadow border border-gray-200">
+                                <i class="fas fa-backward"></i>
+                            </button>
+                            <button id="playButton" class="bg-white hover:bg-gray-100 text-gray-800 p-4 rounded-full shadow border border-gray-200">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button id="forwardButton" class="bg-white hover:bg-gray-100 text-gray-800 p-2 rounded-full shadow border border-gray-200">
+                                <i class="fas fa-forward"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Volume Controls -->
+                        <div class="flex items-center space-x-2 mb-4">
+                            <i class="fas fa-volume-down text-gray-500"></i>
+                            <input type="range" min="0" max="1" step="0.01" value="1" class="volume-slider" id="volumeSlider">
+                            <i class="fas fa-volume-up text-gray-500"></i>
+                        </div>
+                        
+                        <!-- Playback Speed -->
+                        <div class="flex justify-center space-x-2">
+                            <button class="speed-btn px-3 py-1 text-xs rounded-full border border-gray-300" data-speed="0.5">0.5x</button>
+                            <button class="speed-btn px-3 py-1 text-xs rounded-full border border-gray-300 active" data-speed="1">1x</button>
+                            <button class="speed-btn px-3 py-1 text-xs rounded-full border border-gray-300" data-speed="1.5">1.5x</button>
+                            <button class="speed-btn px-3 py-1 text-xs rounded-full border border-gray-300" data-speed="2">2x</button>
+                        </div>
+                    </div>
+                    
+                    <button id="sendButton" class="w-full caspian-gradient hover:opacity-90 text-white font-medium py-3 px-6 rounded-full flex items-center justify-center space-x-2 transition-all">
+                        <i class="fas fa-paper-plane"></i>
+                        <span>Send to AI Assistant</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- API Result Display -->
+            <div id="apiResultContainer" class="mt-6 hidden">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-medium text-gray-700">API Result</h3>
+                    <button id="copyResultButton" class="text-blue-600 hover:text-blue-800 text-sm flex items-center">
+                        <i class="fas fa-copy mr-1"></i>
+                        Copy
+                    </button>
+                </div>
+                <div id="apiResult" class="result-container bg-gray-50 p-3 rounded-lg text-sm border border-gray-200"></div>
+            </div>
+            
+            <!-- Status Messages -->
+            <div id="statusMessage" class="mt-6 text-center text-sm hidden p-3 rounded-lg"></div>
+            
+            <!-- Bank Footer -->
+            <div class="mt-8 pt-4 border-t border-gray-100 text-center">
+                <p class="text-xs text-gray-500">Caspian Solutions AI Banking Services © 2023</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Elements
+            const recordButton = document.getElementById('recordButton');
+            const playButton = document.getElementById('playButton');
+            const rewindButton = document.getElementById('rewindButton');
+            const forwardButton = document.getElementById('forwardButton');
+            const deleteButton = document.getElementById('deleteButton');
+            const sendButton = document.getElementById('sendButton');
+            const playbackControls = document.getElementById('playbackControls');
+            const timer = document.getElementById('timer');
+            const fileSize = document.getElementById('fileSize');
+            const waveform = document.getElementById('waveform');
+            const statusMessage = document.getElementById('statusMessage');
+            const apiResultContainer = document.getElementById('apiResultContainer');
+            const apiResult = document.getElementById('apiResult');
+            const copyResultButton = document.getElementById('copyResultButton');
+            const progressBar = document.getElementById('progressBar');
+            const currentTimeDisplay = document.getElementById('currentTime');
+            const durationDisplay = document.getElementById('duration');
+            const volumeSlider = document.getElementById('volumeSlider');
+            const speedButtons = document.querySelectorAll('.speed-btn');
+            
+            // Variables
+            let mediaRecorder;
+            let audioChunks = [];
+            let audioBlob;
+            let audioUrl;
+            let audio = new Audio();
+            let recordingInterval;
+            let seconds = 0;
+            let isRecording = false;
+            let progressInterval;
+            let currentSpeed = 1;
+            
+            // Update timer display
+            function updateTimer() {
+                const minutes = Math.floor(seconds / 60).toString().padStart(2, '0');
+                const remainingSeconds = (seconds % 60).toString().padStart(2, '0');
+                timer.textContent = `${minutes}:${remainingSeconds}`;
+                seconds++;
+                
+                // Update waveform visualization
+                const progress = Math.min(seconds * 0.5, 100);
+                waveform.style.setProperty('--progress', `${progress}%`);
+                
+                // Estimate file size (very rough approximation)
+                const estimatedSize = (seconds * 0.01).toFixed(2);
+                fileSize.textContent = `${estimatedSize} MB`;
+            }
+            
+            // Format time (seconds to MM:SS)
+            function formatTime(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+            
+            // Update progress bar and time display
+            function updateProgress() {
+                if (audio.duration) {
+                    const progress = (audio.currentTime / audio.duration) * 100;
+                    progressBar.style.setProperty('--progress', `${progress}%`);
+                    currentTimeDisplay.textContent = formatTime(audio.currentTime);
+                }
+            }
+            
+            // Start progress tracking
+            function startProgressTracking() {
+                clearInterval(progressInterval);
+                progressInterval = setInterval(updateProgress, 100);
+                updateProgress();
+            }
+            
+            // Stop progress tracking
+            function stopProgressTracking() {
+                clearInterval(progressInterval);
+            }
+            
+            // Start recording
+            async function startRecording() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    
+                    mediaRecorder.ondataavailable = (event) => {
+                        audioChunks.push(event.data);
+                    };
+                    
+                    mediaRecorder.onstop = () => {
+                        audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        audioUrl = URL.createObjectURL(audioBlob);
+                        audio.src = audioUrl;
+                        
+                        // Show playback controls
+                        playbackControls.classList.remove('hidden');
+                        
+                        // Reset timer but keep the final time
+                        clearInterval(recordingInterval);
+                        
+                        // Set up audio event listeners
+                        audio.addEventListener('loadedmetadata', () => {
+                            durationDisplay.textContent = formatTime(audio.duration);
+                        });
+                        
+                        audio.addEventListener('timeupdate', updateProgress);
+                    };
+                    
+                    mediaRecorder.start();
+                    isRecording = true;
+                    recordButton.innerHTML = '<i class="fas fa-stop"></i><span>Stop Recording</span>';
+                    recordButton.classList.add('pulse');
+                    
+                    // Start timer
+                    seconds = 0;
+                    recordingInterval = setInterval(updateTimer, 1000);
+                    updateTimer();
+                    
+                    showStatus('Recording started... Speak now', 'info');
+                    
+                } catch (error) {
+                    console.error('Error accessing microphone:', error);
+                    showStatus('Microphone access is required for voice commands', 'error');
+                }
+            }
+            
+            // Stop recording
+            function stopRecording() {
+                if (mediaRecorder && isRecording) {
+                    mediaRecorder.stop();
+                    isRecording = false;
+                    recordButton.innerHTML = '<i class="fas fa-microphone"></i><span>Start Recording</span>';
+                    recordButton.classList.remove('pulse');
+                    
+                    // Stop all tracks
+                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                    
+                    showStatus('Recording complete', 'success');
+                }
+            }
+            
+            // Play recorded audio
+            function togglePlayback() {
+                if (audioUrl) {
+                    if (audio.paused) {
+                        audio.play();
+                        playButton.innerHTML = '<i class="fas fa-pause"></i>';
+                        startProgressTracking();
+                    } else {
+                        audio.pause();
+                        playButton.innerHTML = '<i class="fas fa-play"></i>';
+                        stopProgressTracking();
+                    }
+                }
+            }
+            
+            // Rewind 10 seconds
+            function rewind() {
+                if (audioUrl) {
+                    audio.currentTime = Math.max(0, audio.currentTime - 10);
+                    updateProgress();
+                }
+            }
+            
+            // Forward 10 seconds
+            function forward() {
+                if (audioUrl) {
+                    audio.currentTime = Math.min(audio.duration, audio.currentTime + 10);
+                    updateProgress();
+                }
+            }
+            
+            // Delete recording
+            deleteButton.addEventListener('click', () => {
+                audioChunks = [];
+                audioBlob = null;
+                if (audioUrl) {
+                    URL.revokeObjectURL(audioUrl);
+                    audioUrl = null;
+                }
+                audio.pause();
+                playbackControls.classList.add('hidden');
+                apiResultContainer.classList.add('hidden');
+                timer.textContent = '00:00';
+                fileSize.textContent = '0 MB';
+                waveform.style.setProperty('--progress', '0%');
+                stopProgressTracking();
+                showStatus('Recording deleted', 'info');
+            });
+            
+            // Send recording to API
+            sendButton.addEventListener('click', async () => {
+                if (!audioBlob) {
+                    showStatus('No recording to send', 'error');
+                    return;
+                }
+                
+                showStatus('Processing your voice command...', 'info');
+                sendButton.disabled = true;
+                sendButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Processing...</span>';
+                
+                try {
+                    // Create FormData to send the file
+                    const formData = new FormData();
+                    formData.append('audio', audioBlob, 'voice_command.wav');
+                    
+                    // Simulate API call to bank's AI assistant
+                    // In a real implementation, this would be your actual API endpoint
+                    setTimeout(() => {
+                        // This is just a simulation - in a real app you would use fetch()
+                        console.log('Audio sent to Caspian AI:', audioBlob);
+                        
+                        // Simulate success response
+                        showStatus('Voice command received. Processing...', 'success');
+                        
+                        // Simulate AI response after a delay
+                        setTimeout(() => {
+                            // Sample API response structure
+                            const apiResponse = {
+                                status: "success",
+                                timestamp: new Date().toISOString(),
+                                requestId: "cas-" + Math.random().toString(36).substring(2, 15),
+                                result: {
+                                    intent: "account_balance_query",
+                                    confidence: 0.92,
+                                    entities: {
+                                        account_type: "checking",
+                                        time_frame: "current"
+                                    },
+                                    response: "Your current checking account balance is $4,567.89. Would you like to know about any other accounts?",
+                                    suggested_actions: [
+                                        "Transfer funds",
+                                        "View transaction history",
+                                        "Check savings account balance"
+                                    ]
+                                },
+                                metadata: {
+                                    processing_time: "1.2s",
+                                    model_version: "cas-ai-2.4.1",
+                                    language: "en-US"
+                                }
+                            };
+                            
+                            // Display the formatted API result
+                            apiResult.textContent = JSON.stringify(apiResponse, null, 2);
+                            apiResultContainer.classList.remove('hidden');
+                            
+                            showStatus('AI Assistant: ' + apiResponse.result.response, 'info');
+                            sendButton.disabled = false;
+                            sendButton.innerHTML = '<i class="fas fa-paper-plane"></i><span>Send to AI Assistant</span>';
+                        }, 1500);
+                    }, 2000);
+                    
+                } catch (error) {
+                    console.error('Error sending recording:', error);
+                    showStatus('Failed to process voice command', 'error');
+                    sendButton.disabled = false;
+                    sendButton.innerHTML = '<i class="fas fa-paper-plane"></i><span>Send to AI Assistant</span>';
+                }
+            });
+            
+            // Copy API result to clipboard
+            copyResultButton.addEventListener('click', () => {
+                navigator.clipboard.writeText(apiResult.textContent)
+                    .then(() => {
+                        const originalText = copyResultButton.innerHTML;
+                        copyResultButton.innerHTML = '<i class="fas fa-check mr-1"></i>Copied!';
+                        setTimeout(() => {
+                            copyResultButton.innerHTML = originalText;
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy text: ', err);
+                    });
+            });
+            
+            // Toggle recording
+            recordButton.addEventListener('click', () => {
+                if (isRecording) {
+                    stopRecording();
+                } else {
+                    startRecording();
+                }
+            });
+            
+            // Play button click
+            playButton.addEventListener('click', togglePlayback);
+            
+            // Rewind button click
+            rewindButton.addEventListener('click', rewind);
+            
+            // Forward button click
+            forwardButton.addEventListener('click', forward);
+            
+            // Volume control
+            volumeSlider.addEventListener('input', () => {
+                audio.volume = volumeSlider.value;
+            });
+            
+            // Playback speed controls
+            speedButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Remove active class from all buttons
+                    speedButtons.forEach(btn => btn.classList.remove('active'));
+                    
+                    // Add active class to clicked button
+                    button.classList.add('active');
+                    
+                    // Set playback speed
+                    currentSpeed = parseFloat(button.dataset.speed);
+                    audio.playbackRate = currentSpeed;
+                });
+            });
+            
+            // Show status message
+            function showStatus(message, type) {
+                statusMessage.textContent = message;
+                statusMessage.classList.remove('hidden');
+                
+                // Set color based on type
+                statusMessage.className = 'mt-6 text-center text-sm p-3 rounded-lg';
+                if (type === 'success') {
+                    statusMessage.classList.add('bg-green-50', 'text-green-700');
+                } else if (type === 'error') {
+                    statusMessage.classList.add('bg-red-50', 'text-red-700');
+                } else if (type === 'info') {
+                    statusMessage.classList.add('bg-blue-50', 'text-blue-700');
+                }
+                
+                // Hide after 5 seconds if it's not an important message
+                if (type !== 'info') {
+                    setTimeout(() => {
+                        statusMessage.classList.add('hidden');
+                    }, 5000);
+                }
+            }
+            
+            // Audio ended event
+            audio.addEventListener('ended', () => {
+                playButton.innerHTML = '<i class="fas fa-play"></i>';
+                stopProgressTracking();
+            });
+            
+            // Initialize volume
+            audio.volume = 1;
+        });
+    </script>
+</body>
+</html>
