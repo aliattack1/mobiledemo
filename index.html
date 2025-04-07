@@ -143,8 +143,15 @@
                     
                     const formData = new FormData();
                     formData.append('voice', audioBlob, 'recording.m4a');
+
+                    var mode = "number"
+                    if (responseText.textContent === ""){
+                        mode = "maincommand
+                    }else if(responseText.textContent === "cardtocard"{
+                        mode = "number"
+                    }
                     
-                    const response = await fetch('https://zany-sniffle-rx9444j5gjqcrvr-8000.app.github.dev/number', {
+                    const response = await fetch('https://zany-sniffle-rx9444j5gjqcrvr-8000.app.github.dev/' + mode, {
                         method: 'POST',
                         body: formData
                     });
