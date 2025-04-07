@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Caspian Solutions AI Voice Assistant</title>
+    <title>Voice Asustant</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .waveform {
-            background: linear-gradient(90deg, #1e3a8a 0%, #1e3a8a var(--progress, 0%), #e5e7eb var(--progress, 0%), #e5e7eb 100%);
+            background: linear-gradient(90deg, #3b82f6 0%, #3b82f6 var(--progress, 0%), #e5e7eb var(--progress, 0%), #e5e7eb 100%);
             transition: background 0.3s ease;
         }
         .pulse {
@@ -17,19 +17,16 @@
         @keyframes pulse {
             0% {
                 transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(30, 58, 138, 0.4);
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
             }
             70% {
                 transform: scale(1.02);
-                box-shadow: 0 0 0 10px rgba(30, 58, 138, 0);
+                box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
             }
             100% {
                 transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(30, 58, 138, 0);
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
             }
-        }
-        .caspian-gradient {
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
         }
         .result-container {
             max-height: 200px;
@@ -113,16 +110,24 @@
             font-size: 0.8rem;
             color: #3b82f6;
         }
+        .permission-denied {
+            animation: shake 0.5s;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen flex items-center justify-center p-4 font-sans">
     <div class="bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-md border border-gray-200">
-        <!-- Bank Header -->
-        <div class="caspian-gradient p-6 text-white">
+        <!-- Header -->
+        <div class="bg-blue-500 p-6 text-white">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-2xl font-bold">Caspian Solutions</h1>
-                    <p class="text-white/80 mt-1">Banking AI Voice Assistant</p>
+                    <h1 class="text-2xl font-bold">Voice Assistant</h1>
+                    <p class="text-white/80 mt-1">Caspian Solutions</p>
                 </div>
                 <div class="bg-white/20 p-3 rounded-full">
                     <i class="fas fa-robot text-xl"></i>
@@ -133,7 +138,11 @@
         <!-- Recording Interface -->
         <div class="p-6">
             <div class="text-center mb-6">
-                <p class="text-gray-600">Press the button below to record your banking voice command</p>
+                <p class="text-gray-600">Record your voice to generate a byte array for Python</p>
+                <div id="permissionWarning" class="hidden mt-2 text-sm text-red-600 bg-red-50 p-2 rounded">
+                    <i class="fas fa-exclamation-circle mr-1"></i>
+                    Microphone permission denied. Please allow access to continue.
+                </div>
             </div>
             
             <div class="waveform h-12 rounded-lg mb-4" id="waveform"></div>
@@ -145,13 +154,13 @@
                 </div>
                 <div class="text-gray-500 flex items-center">
                     <i class="fas fa-file-audio mr-2"></i>
-                    <span id="fileSize">0 MB</span>
+                    <span id="fileSize">0 KB</span>
                 </div>
             </div>
             
             <!-- Main Controls -->
             <div class="flex flex-col space-y-4">
-                <button id="recordButton" class="caspian-gradient hover:opacity-90 text-white font-bold py-4 px-6 rounded-full flex items-center justify-center space-x-3 transition-all duration-300 shadow-md">
+                <button id="recordButton" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-6 rounded-full flex items-center justify-center space-x-3 transition-all duration-300 shadow-md">
                     <i class="fas fa-microphone text-xl"></i>
                     <span class="text-lg">Start Recording</span>
                 </button>
@@ -186,7 +195,7 @@
                             <button id="playButton" class="bg-white hover:bg-gray-100 text-gray-800 p-4 rounded-full shadow border border-gray-200">
                                 <i class="fas fa-play"></i>
                             </button>
-                            <button id="forwardButton" class="bg-white hover:bg-gray-100 text-gray-800 p-2 rounded-full shadow border border-gray-200">
+                            <button id="forwardButton" class="bg-white hover:bg-gray-100 text-gray-800 p-2 rounded-full shadow border border border-gray-200">
                                 <i class="fas fa-forward"></i>
                             </button>
                         </div>
@@ -212,36 +221,38 @@
                         <p class="text-sm">WAV (16-bit PCM, 44.1kHz)</p>
                     </div>
                     
-                    <button id="sendButton" class="w-full caspian-gradient hover:opacity-90 text-white font-medium py-3 px-6 rounded-full flex items-center justify-center space-x-2 transition-all">
-                        <i class="fas fa-paper-plane"></i>
-                        <span>Send to AI Assistant</span>
+                    <button id="convertButton" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-full flex items-center justify-center space-x-2 transition-all">
+                        <i class="fas fa-code"></i>
+                        <span>Convert to Bytes</span>
                     </button>
                 </div>
             </div>
             
-            <!-- API Result Display -->
-            <div id="apiResultContainer" class="mt-6 hidden">
+            <!-- Bytes Result Display -->
+            <div id="bytesResultContainer" class="mt-6 hidden">
                 <div class="flex items-center justify-between mb-2">
-                    <h3 class="font-medium text-gray-700">AI Response</h3>
-                    <button id="copyResultButton" class="text-blue-600 hover:text-blue-800 text-sm flex items-center">
+                    <h3 class="font-medium text-gray-700">Python Byte Array</h3>
+                    <button id="copyBytesButton" class="text-blue-600 hover:text-blue-800 text-sm flex items-center">
                         <i class="fas fa-copy mr-1"></i>
                         Copy
                     </button>
                 </div>
-                <div id="apiResult" class="result-container bg-gray-50 p-3 rounded-lg text-sm border border-gray-200"></div>
+                <div id="bytesResult" class="result-container bg-gray-50 p-3 rounded-lg text-sm border border-gray-200"></div>
                 
-                <div class="mt-2 text-xs text-gray-500">
-                    <p>API Request Details:</p>
-                    <p id="apiUrl" class="blob-url"></p>
+                <div class="mt-4">
+                    <button id="downloadButton" class="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-6 rounded-full flex items-center justify-center space-x-2 transition-all">
+                        <i class="fas fa-download mr-1"></i>
+                        <span>Download as voice.py</span>
+                    </button>
                 </div>
             </div>
             
             <!-- Status Messages -->
             <div id="statusMessage" class="mt-6 text-center text-sm hidden p-3 rounded-lg"></div>
             
-            <!-- Bank Footer -->
+            <!-- Footer -->
             <div class="mt-8 pt-4 border-t border-gray-100 text-center">
-                <p class="text-xs text-gray-500">Caspian Solutions AI Banking Services © 2023</p>
+                <p class="text-xs text-gray-500">Voice to Bytes Converter © 2023</p>
             </div>
         </div>
     </div>
@@ -254,22 +265,23 @@
             const rewindButton = document.getElementById('rewindButton');
             const forwardButton = document.getElementById('forwardButton');
             const deleteButton = document.getElementById('deleteButton');
-            const sendButton = document.getElementById('sendButton');
+            const convertButton = document.getElementById('convertButton');
+            const downloadButton = document.getElementById('downloadButton');
             const playbackControls = document.getElementById('playbackControls');
+            const bytesResultContainer = document.getElementById('bytesResultContainer');
+            const bytesResult = document.getElementById('bytesResult');
+            const copyBytesButton = document.getElementById('copyBytesButton');
             const timer = document.getElementById('timer');
             const fileSize = document.getElementById('fileSize');
             const waveform = document.getElementById('waveform');
             const statusMessage = document.getElementById('statusMessage');
-            const apiResultContainer = document.getElementById('apiResultContainer');
-            const apiResult = document.getElementById('apiResult');
-            const copyResultButton = document.getElementById('copyResultButton');
+            const permissionWarning = document.getElementById('permissionWarning');
             const progressSlider = document.getElementById('progressSlider');
             const progressSliderBg = document.getElementById('progressSliderBg');
             const currentTimeDisplay = document.getElementById('currentTime');
             const durationDisplay = document.getElementById('duration');
             const volumeSlider = document.getElementById('volumeSlider');
             const speedButtons = document.querySelectorAll('.speed-btn');
-            const apiUrlElement = document.getElementById('apiUrl');
             
             // Variables
             let mediaRecorder;
@@ -283,6 +295,23 @@
             let progressInterval;
             let currentSpeed = 1;
             let isDraggingProgress = false;
+            let permissionGranted = false;
+            
+            // Check microphone permission on page load
+            checkMicrophonePermission();
+            
+            // Function to check microphone permission
+            async function checkMicrophonePermission() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    stream.getTracks().forEach(track => track.stop());
+                    permissionGranted = true;
+                    permissionWarning.classList.add('hidden');
+                } catch (error) {
+                    permissionGranted = false;
+                    permissionWarning.classList.remove('hidden');
+                }
+            }
             
             // Update timer display
             function updateTimer() {
@@ -296,8 +325,8 @@
                 waveform.style.setProperty('--progress', `${progress}%`);
                 
                 // Estimate file size (very rough approximation)
-                const estimatedSize = (seconds * 0.01).toFixed(2);
-                fileSize.textContent = `${estimatedSize} MB`;
+                const estimatedSize = (seconds * 10).toFixed(0); // KB
+                fileSize.textContent = `${estimatedSize} KB`;
             }
             
             // Format time (seconds to MM:SS)
@@ -331,6 +360,16 @@
             
             // Start recording
             async function startRecording() {
+                if (!permissionGranted) {
+                    showStatus('Microphone permission denied. Please allow access.', 'error');
+                    permissionWarning.classList.remove('hidden');
+                    permissionWarning.classList.add('permission-denied');
+                    setTimeout(() => {
+                        permissionWarning.classList.remove('permission-denied');
+                    }, 500);
+                    return;
+                }
+                
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ 
                         audio: {
@@ -340,14 +379,6 @@
                             channelCount: 1
                         } 
                     });
-                    
-                    const audioContext = new AudioContext();
-                    const source = audioContext.createMediaStreamSource(stream);
-                    
-                    // Create a script processor for 16-bit PCM conversion
-                    const processor = audioContext.createScriptProcessor(4096, 1, 1);
-                    source.connect(processor);
-                    processor.connect(audioContext.destination);
                     
                     mediaRecorder = new MediaRecorder(stream, {
                         mimeType: 'audio/wav',
@@ -393,7 +424,9 @@
                     
                 } catch (error) {
                     console.error('Error accessing microphone:', error);
-                    showStatus('Microphone access is required for voice commands', 'error');
+                    showStatus('Error accessing microphone: ' + error.message, 'error');
+                    permissionGranted = false;
+                    permissionWarning.classList.remove('hidden');
                 }
             }
             
@@ -453,9 +486,9 @@
                 }
                 audio.pause();
                 playbackControls.classList.add('hidden');
-                apiResultContainer.classList.add('hidden');
+                bytesResultContainer.classList.add('hidden');
                 timer.textContent = '00:00';
-                fileSize.textContent = '0 MB';
+                fileSize.textContent = '0 KB';
                 waveform.style.setProperty('--progress', '0%');
                 stopProgressTracking();
                 progressSlider.value = 0;
@@ -463,93 +496,85 @@
                 showStatus('Recording deleted', 'info');
             });
             
-            // Convert blob to base64 for GET request
-            function blobToBase64(blob) {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                        const base64String = reader.result.split(',')[1];
-                        resolve(base64String);
-                    };
-                    reader.onerror = reject;
-                    reader.readAsDataURL(blob);
-                });
-            }
-            
-            // Send recording to API using GET method with base64 encoded audio
-            sendButton.addEventListener('click', async () => {
+            // Convert blob to bytes array for Python
+            async function convertToBytes() {
                 if (!audioBlob) {
-                    showStatus('No recording to send', 'error');
+                    showStatus('No recording to convert', 'error');
                     return;
                 }
                 
-                showStatus('Processing your voice command...', 'info');
-                sendButton.disabled = true;
-                sendButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Processing...</span>';
+                showStatus('Converting audio to bytes...', 'info');
+                convertButton.disabled = true;
+                convertButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Converting...</span>';
                 
                 try {
-                    // Convert audio blob to base64
-                    const base64Audio = await blobToBase64(audioBlob);
+                    // Read the blob as ArrayBuffer
+                    const arrayBuffer = await audioBlob.arrayBuffer();
                     
-                    // Create the GET URL with the base64 audio as a parameter
-                    const apiEndpoint = 'https://zany-sniffle-rx9444j5gjqcrvr-8000.app.github.dev/process_voice';
-                    const params = new URLSearchParams();
-                    params.append('voice', base64Audio);
-                    params.append('format', 'wav');
-                    params.append('sample_rate', '44100');
-                    params.append('bits', '16');
+                    // Convert to Uint8Array
+                    const uint8Array = new Uint8Array(arrayBuffer);
                     
-                    const apiUrlWithParams = `${apiEndpoint}?${params.toString()}`;
+                    // Convert to Python bytes string
+                    let bytesString = 'voice = bytes([\n    ';
+                    const chunkSize = 16;
                     
-                    // Display the API URL for debugging
-                    apiUrlElement.textContent = apiUrlWithParams;
-                    
-                    // Make GET request to the API
-                    const response = await fetch(apiUrlWithParams, {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'application/json'
+                    for (let i = 0; i < uint8Array.length; i++) {
+                        bytesString += uint8Array[i];
+                        
+                        if (i < uint8Array.length - 1) {
+                            bytesString += ', ';
+                            
+                            // Add line breaks for readability
+                            if ((i + 1) % chunkSize === 0) {
+                                bytesString += '\n    ';
+                            }
                         }
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     
-                    // Parse the JSON response
-                    const data = await response.json();
+                    bytesString += '\n])';
                     
                     // Display the result
-                    if (data.result) {
-                        apiResult.textContent = data.result;
-                        apiResultContainer.classList.remove('hidden');
-                        showStatus('AI response received successfully', 'success');
-                    } else {
-                        showStatus('No result found in response', 'error');
-                    }
+                    bytesResult.textContent = bytesString;
+                    bytesResultContainer.classList.remove('hidden');
+                    showStatus('Conversion complete', 'success');
                     
                 } catch (error) {
-                    console.error('Error sending recording:', error);
-                    
-                    // For demo purposes, simulate a response if the API call fails
-                    apiResult.textContent = `Simulated AI response:\n\nThank you for your voice command. I've processed your request for account balance. Your current balance is $4,567.89. Would you like any other banking services today?`;
-                    apiResultContainer.classList.remove('hidden');
-                    showStatus('Using simulated response (API unavailable)', 'info');
-                    
+                    console.error('Error converting audio:', error);
+                    showStatus('Error converting audio: ' + error.message, 'error');
                 } finally {
-                    sendButton.disabled = false;
-                    sendButton.innerHTML = '<i class="fas fa-paper-plane"></i><span>Send to AI Assistant</span>';
+                    convertButton.disabled = false;
+                    convertButton.innerHTML = '<i class="fas fa-code"></i><span>Convert to Bytes</span>';
                 }
+            }
+            
+            // Download as Python file
+            downloadButton.addEventListener('click', () => {
+                if (!bytesResult.textContent) {
+                    showStatus('No bytes to download', 'error');
+                    return;
+                }
+                
+                const blob = new Blob([bytesResult.textContent], { type: 'text/x-python' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'voice.py';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showStatus('File downloaded as voice.py', 'success');
             });
             
-            // Copy API result to clipboard
-            copyResultButton.addEventListener('click', () => {
-                navigator.clipboard.writeText(apiResult.textContent)
+            // Copy bytes to clipboard
+            copyBytesButton.addEventListener('click', () => {
+                navigator.clipboard.writeText(bytesResult.textContent)
                     .then(() => {
-                        const originalText = copyResultButton.innerHTML;
-                        copyResultButton.innerHTML = '<i class="fas fa-check mr-1"></i>Copied!';
+                        const originalText = copyBytesButton.innerHTML;
+                        copyBytesButton.innerHTML = '<i class="fas fa-check mr-1"></i>Copied!';
                         setTimeout(() => {
-                            copyResultButton.innerHTML = originalText;
+                            copyBytesButton.innerHTML = originalText;
                         }, 2000);
                     })
                     .catch(err => {
@@ -622,6 +647,9 @@
                     audio.playbackRate = currentSpeed;
                 });
             });
+            
+            // Convert button click
+            convertButton.addEventListener('click', convertToBytes);
             
             // Show status message
             function showStatus(message, type) {
