@@ -174,7 +174,7 @@
                     
                     showToast('Recording sent successfully!', 'success');
                 } catch (error) {
-                    console.error('Error sending to API:', error);
+                    alert('Error sending to API:', error);
                     responseText.textContent = 'Error: ' + error.message;
                     apiResponse.classList.remove('hidden');
                     showToast('Failed to send recording', 'error');
