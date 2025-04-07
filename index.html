@@ -81,7 +81,13 @@
     
     <div id="statusToast" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg opacity-0 transition-opacity duration-300"></div>
 <!-- Your original HTML remains unchanged above -->
-
+<!-- Add a section to display the text result history -->
+<div id="historyContainer" class="mt-4 bg-gray-100 p-4 rounded-md">
+    <h3 class="text-lg font-semibold mb-2">Text Results History</h3>
+    <div id="historyContent" class="space-y-2">
+        <!-- Previous text results will appear here -->
+    </div>
+</div>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const recordButton = document.getElementById('recordButton');
@@ -94,6 +100,7 @@
         const responseText = document.getElementById('responseText');
         const responseAudio = document.getElementById('responseAudio');
         const statusToast = document.getElementById('statusToast');
+        const historyContent = document.getElementById('historyContent');
 
         let mediaRecorder;
         let audioChunks = [];
@@ -104,6 +111,9 @@
         let currentPath = "maincommand";
         let stepIndex = 0;
         let pathSteps = [];
+
+        // Store results history
+        let resultsHistory = [];
 
         function resetApiPath() {
             currentPath = "maincommand";
@@ -180,6 +190,9 @@
 
                 apiResponse.classList.remove('hidden');
                 responseText.textContent = textResult || 'No text result received';
+
+                // Add the new result to history
+                addResultToHistory(textResult);
 
                 if (audioBytes.size > 0) {
                     const audioUrl = URL.createObjectURL(audioBytes);
@@ -272,6 +285,15 @@
                     bar.style.height = `${height}px`;
                 });
             }, 100);
+        }
+
+        function addResultToHistory(text) {
+            // Store the result in history
+            resultsHistory.push(text);
+            const historyItem = document.createElement('div');
+            historyItem.classList.add('bg-white', 'p-2', 'rounded-md', 'shadow-md');
+            historyItem.textContent = text;
+            historyContent.insertBefore(historyItem, historyContent.firstChild); // Add to top
         }
 
         function showToast(message, type) {
