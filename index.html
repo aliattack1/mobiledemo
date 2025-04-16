@@ -62,11 +62,11 @@
     </div>
     <div class="flex flex-col space-y-4">
       <button id="recordButton" class="bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-lg font-medium flex items-center justify-center space-x-2 transition-colors">
-        <i class="fas fa-microphone"></i>
+        <i class="fas fa-microphone mr-2"></i>
         <span id="recordLabel">Start Recording</span>
       </button>
       <button id="sendButton" disabled class="bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-lg font-medium flex items-center justify-center space-x-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-        <i class="fas fa-paper-plane"></i>
+        <i class="fas fa-paper-plane mr-2"></i>
         <span>Send to API</span>
       </button>
       <div id="apiResponse" class="hidden mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
@@ -141,7 +141,7 @@
       permissionStatus.classList.remove('hidden');
     }
 
-    // Functions for API path flow (use your existing logic as needed)
+    // API path flow functions (modify as needed)
     function resetApiPath() {
       currentPath = "maincommand";
       stepIndex = 0;
@@ -182,29 +182,27 @@
       }, 3000);
     }
 
-    // Update waveform based on live audio levels using the AnalyserNode
+    // Update waveform based on live audio levels using AnalyserNode
     function animateWaveform() {
       if (!analyser) return;
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      const dataArray = new Uint8Array(analyser.fftSize);
       analyser.getByteTimeDomainData(dataArray);
-      
+
       let sum = 0;
       dataArray.forEach(val => sum += Math.abs(val - 128));
-      const average = sum / dataArray.length;
+      // Multiply average to scale the waveform visibly higher
+      const average = (sum / dataArray.length) * 2;
       
       waveBars.forEach(bar => {
-        const height = Math.min(50, Math.max(10, average + (Math.random() * 10 - 5)));
+        // Ensure a visible range between 10px and 50px
+        const height = Math.min(50, Math.max(10, average + (Math.random() * 4 - 2)));
         bar.style.height = height + 'px';
       });
       animationFrameId = requestAnimationFrame(animateWaveform);
     }
 
-    // Start recording function using Recorder.js
+    // Start recording function using Recorder.js (no delay)
     async function startRecording() {
-      // Optional 1-second countdown for user preparation
-      recordLabel.textContent = 'Get Ready...';
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
       try {
         audioStream = await navigator.mediaDevices.getUserMedia({
           audio: {
@@ -219,6 +217,7 @@
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
         const source = audioContext.createMediaStreamSource(audioStream);
         analyser = audioContext.createAnalyser();
+        analyser.fftSize = 2048;
         source.connect(analyser);
         // Initialize Recorder.js on the audio source; record in mono
         recorder = new Recorder(source, { numChannels: 1 });
@@ -246,6 +245,7 @@
         waveform.classList.add('hidden');
         recording = false;
         recordButton.classList.remove('bg-red-500', 'hover:bg-red-600', 'recording-animation');
+        // Reset to a single mic icon and label for starting recording
         recordButton.classList.add('bg-blue-500', 'hover:bg-blue-600');
         recordLabel.innerHTML = '<i class="fas fa-microphone mr-2"></i> Start Recording';
         
@@ -260,7 +260,7 @@
       }
     }
 
-    // Event listeners for record button
+    // Event listener for record button
     recordButton.addEventListener('click', () => {
       if (recording) {
         stopRecording();
@@ -280,7 +280,7 @@
         sendButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Sending...';
         const formData = new FormData();
         formData.append('voice', audioBlob, 'recording.wav');
-        // Use your endpoint exactly as specified below:
+        // Use your exact endpoint below:
         const response = await fetch(`https://bookish-cod-pj964w4r5gw6f7v7j-8000.app.github.dev/${currentPath}`, {
           method: 'POST',
           body: formData
@@ -288,9 +288,8 @@
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        // Get header "result" as the text result
+        // Retrieve the header "result" as the text result and any audio blob response
         const textResult = response.headers.get('result');
-        // Also assume the API might return an audio blob
         const audioBytes = await response.blob();
         apiResponse.classList.remove('hidden');
         responseText.textContent = textResult || 'No text result received';
