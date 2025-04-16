@@ -7,58 +7,50 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Gradient Background */
+        /* Gradient Background for Body */
         body {
             background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
-            overflow-x: hidden;
         }
 
-        /* Frosted Glass Effect */
+        /* Frosted Glass Effect for Container */
         .glass-container {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         /* Pulse Animation for Recording */
         @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.9); }
-            70% { box-shadow: 0 0 0 25px rgba(239, 68, 68, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8); }
+            70% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); }
             100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
         .recording-animation {
-            animation: pulse 1.3s infinite;
+            animation: pulse 1.5s infinite;
         }
 
-        /* Waveform Styling */
+        /* Waveform Styling with Gradient */
         .waveform {
-            height: 90px;
+            height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 7px;
-            padding: 10px;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.05);
+            gap: 6px;
         }
         .wave-bar {
-            width: 9px;
+            width: 8px;
             height: 10px;
-            background: linear-gradient(to bottom, #A5B4FC, #1E3A8A);
-            border-radius: 5px;
-            transition: height 0.3s ease, transform 0.2s ease;
-        }
-        .wave-bar:hover {
-            transform: scaleY(1.1);
+            background: linear-gradient(to bottom, #93C5FD, #1E3A8A);
+            border-radius: 4px;
+            transition: height 0.3s ease;
         }
 
-        /* Fade-In Animation */
+        /* Smooth Fade-In Animation */
         .fade-in {
-            animation: fadeIn 0.6s ease-out;
+            animation: fadeIn 0.5s ease-in;
         }
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(12px); }
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
@@ -66,55 +58,34 @@
         .response-audio {
             width: 100%;
             margin-top: 12px;
-            border-radius: 10px;
-            filter: brightness(1.1);
+            border-radius: 8px;
         }
 
-        /* Button Hover Effects */
+        /* Hover Effects for Buttons */
         button:hover:not(:disabled) {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            transform: translateY(-2px);
+            transition: transform 0.2s ease;
         }
 
         /* Toast Styling */
         #statusToast {
-            backdrop-filter: blur(10px);
-            background: rgba(0, 0, 0, 0.75);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        /* Footer Styling */
-        .footer {
-            animation: fadeIn 1s ease-out;
-        }
-
-        /* Scrollbar Styling for History */
-        #historyContent::-webkit-scrollbar {
-            width: 6px;
-        }
-        #historyContent::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-        }
-        #historyContent::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 10px;
+            backdrop-filter: blur(8px);
+            background: rgba(0, 0, 0, 0.7);
         }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-6">
-    <div class="glass-container rounded-3xl p-8 w-full max-w-lg">
-        <!-- Header with Branding -->
-        <div class="flex items-center justify-center mb-8">
-            <i class="fas fa-university text-4xl text-blue-300 mr-3"></i>
-            <h1 class="text-4xl font-extrabold text-white tracking-tight">
+    <div class="glass-container rounded-2xl shadow-2xl p-8 w-full max-w-lg">
+        <!-- Header with Branding and Logo -->
+        <div class="flex items-center justify-center mb-6">
+            <i class="fas fa-university text-3xl text-blue-300 mr-2"></i>
+            <h1 class="text-3xl font-extrabold text-white">
                 Parsian <span class="text-blue-300">Voice</span>
             </h1>
         </div>
 
         <!-- Permission Status -->
-        <div id="permissionStatus" class="hidden mb-6 p-4 rounded-xl text-sm text-white bg-blue-500/25 fade-in"></div>
+        <div id="permissionStatus" class="hidden mb-6 p-4 rounded-lg text-sm text-white bg-blue-500/20"></div>
 
         <!-- Waveform Visualization -->
         <div id="waveform" class="waveform hidden fade-in">
@@ -136,42 +107,37 @@
         </div>
 
         <!-- Controls -->
-        <div class="flex flex-col space-y-6 mt-8">
+        <div class="flex flex-col space-y-6 mt-6">
             <!-- Record Button -->
-            <button id="recordButton" class="bg-blue-600 hover:bg-blue-700 text-white p-9 rounded-full flex items-center justify-center transition-colors mx-auto shadow-xl">
-                <i class="fas fa-microphone text-5xl"></i>
+            <button id="recordButton" class="bg-blue-600 hover:bg-blue-700 text-white p-8 rounded-full flex items-center justify-center transition-colors mx-auto shadow-lg">
+                <i class="fas fa-microphone text-4xl"></i>
             </button>
 
             <!-- Send Button -->
-            <button id="sendButton" disabled class="bg-green-500 hover:bg-green-600 text-white py-4 px-10 rounded-2xl font-semibold flex items-center justify-center space-x-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg">
-                <i class="fas fa-paper-plane text-lg"></i>
+            <button id="sendButton" disabled class="bg-green-500 hover:bg-green-600 text-white py-3 px-8 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md">
+                <i class="fas fa-paper-plane"></i>
                 <span>Send Command</span>
             </button>
 
             <!-- API Response Section -->
-            <div id="apiResponse" class="hidden mt-6 p-6 bg-white/10 rounded-2xl border border-white/25 fade-in">
-                <h3 class="font-semibold text-white mb-3 text-xl tracking-wide">Assistant Response</h3>
-                <div id="responseText" class="text-lg text-gray-100 mb-3 leading-relaxed"></div>
+            <div id="apiResponse" class="hidden mt-6 p-6 bg-white/10 rounded-xl border border-white/20 fade-in">
+                <h3 class="font-semibold text-white mb-3 text-lg">Assistant Response</h3>
+                <div id="responseText" class="text-base text-gray-100 mb-3"></div>
                 <audio id="responseAudio" controls class="response-audio hidden"></audio>
             </div>
         </div>
 
         <!-- History Section -->
-        <div id="historyContainer" class="mt-8 p-6 bg-white/10 rounded-2xl">
-            <h3 class="text-xl font-semibold text-white mb-4 tracking-wide">Command History</h3>
-            <div id="historyContent" class="space-y-3 max-h-48 overflow-y-auto">
+        <div id="historyContainer" class="mt-8 p-6 bg-white/10 rounded-xl">
+            <h3 class="text-lg font-semibold text-white mb-3">Command History</h3>
+            <div id="historyContent" class="space-y-3 max-h-40 overflow-y-auto">
                 <!-- Previous text results will appear here -->
             </div>
-        </div>
-
-        <!-- Powered by Caspian Footer -->
-        <div class="footer mt-6 text-center text-sm text-gray-200 fade-in">
-            Powered by <span class="font-semibold text-blue-300">Caspian</span>
         </div>
     </div>
 
     <!-- Status Toast -->
-    <div id="statusToast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 text-white px-6 py-3 rounded-xl shadow-xl opacity-0 transition-opacity duration-300"></div>
+    <div id="statusToast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 text-white px-6 py-3 rounded-lg shadow-xl opacity-0 transition-opacity duration-300"></div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -225,12 +191,12 @@
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     stream.getTracks().forEach(track => track.stop());
-                    permissionStatus.classList.remove('hidden', 'bg-red-500/25', 'text-red-200');
-                    permissionStatus.classList.add('bg-green-500/25', 'text-green-200');
+                    permissionStatus.classList.remove('hidden', 'bg-red-500/20', 'text-red-200');
+                    permissionStatus.classList.add('bg-green-500/20', 'text-green-200');
                     permissionStatus.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Microphone access granted';
                 } catch (error) {
-                    permissionStatus.classList.remove('hidden', 'bg-green-500/25', 'text-green-200');
-                    permissionStatus.classList.add('bg-red-500/25', 'text-red-200');
+                    permissionStatus.classList.remove('hidden', 'bg-green-500/20', 'text-green-200');
+                    permissionStatus.classList.add('bg-red-500/20', 'text-red-200');
                     permissionStatus.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i> Microphone access denied. Please allow microphone access.';
                     recordButton.disabled = true;
                 }
@@ -298,7 +264,7 @@
                     resetApiPath();
                 } finally {
                     sendButton.disabled = false;
-                    sendButton.innerHTML = '<i class="fas fa-paper-plane mr-2 text-lg"></i> Send Command';
+                    sendButton.innerHTML = '<i class="fas fa-paper-plane mr-2"></i> Send Command';
                 }
             });
 
@@ -323,7 +289,7 @@
                     audioChunks = [];
                     mediaRecorder.start();
 
-                    recordButton.innerHTML = '<i class="fas fa-stop text-5xl"></i>';
+                    recordButton.innerHTML = '<i class="fas fa-stop text-4xl"></i>';
                     recordButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
                     recordButton.classList.add('bg-red-600', 'hover:bg-red-700', 'recording-animation');
                     waveform.classList.remove('hidden');
@@ -341,7 +307,7 @@
                     mediaRecorder.stop();
                     mediaRecorder.stream.getTracks().forEach(track => track.stop());
 
-                    recordButton.innerHTML = '<i class="fas fa-microphone text-5xl"></i>';
+                    recordButton.innerHTML = '<i class="fas fa-microphone text-4xl"></i>';
                     recordButton.classList.remove('bg-red-600', 'hover:bg-red-700', 'recording-animation');
                     recordButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
 
@@ -349,11 +315,11 @@
                 }
             }
 
-            function AnimateWaveform() {
+            function animateWaveform() {
                 clearInterval(animationInterval);
                 animationInterval = setInterval(() => {
                     waveBars.forEach(bar => {
-                        const height = Math.floor(Math.random() * 70) + 10;
+                        const height = Math.floor(Math.random() * 60) + 10;
                         bar.style.height = `${height}px`;
                     });
                 }, 100);
@@ -362,7 +328,7 @@
             function addResultToHistory(text) {
                 resultsHistory.push(text);
                 const historyItem = document.createElement('div');
-                historyItem.classList.add('bg-white/25', 'p-3', 'rounded-lg', 'text-gray-100', 'text-sm', 'fade-in');
+                historyItem.classList.add('bg-white/20', 'p-3', 'rounded-lg', 'text-gray-100', 'text-sm', 'fade-in');
                 historyItem.textContent = text;
                 historyContent.insertBefore(historyItem, historyContent.firstChild);
             }
