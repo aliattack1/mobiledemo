@@ -265,30 +265,69 @@
         sendButton.disabled = true;
         showToast('در حال ارسال...', 'info');
         const fd = new FormData();
+        
+        // Validate and append audio file
+        if (!audioBlob) {
+          showToast('فایل صوتی ضبط نشده است', 'error');
+          sendButton.disabled = false;
+          return;
+        }
         fd.append('voice', audioBlob, 'recording.m4a');
+
+        // Validate and append datalist in contact mode
         if (contactMode) {
-          const blob = new Blob([JSON.stringify(cardData)], { type: 'application/json' });
-          fd.append('datalist', datalist);
+          if (Object.keys(cardData).length === 0) {
+            showToast('داده‌های مخاطبین خالی است', 'error');
+            sendButton.disabled = false;
+            return;
+          }
+          try {
+            const datalist = JSON.stringify(cardData);
+            fd.append('datalist', datalist); // Send as plain JSON string
+          } catch (error) {
+            showToast('خطا در فرمت داده‌های مخاطبین', 'error');
+            console.error('JSON stringify error:', error);
+            sendButton.disabled = false;
+            return;
+          }
           currentPath = 'type/number';
         }
+
         try {
           const url = `https://bookish-cod-pj964w4r5gw6f7v7j-8000.app.github.dev/${currentPath}`;
-          const res = await fetch(url, { method: 'POST', body: fd });
-          if (!res.ok) throw new Error();
-          const text = res.headers.get('result');
+          console.log('Sending request to:', url);
+          console.log('FormData contents:');
+          for (const [key, value] of fd.entries()) {
+            console.log(`${key}:`, value);
+          }
+
+          const res = await fetch(url, {
+            method: 'POST',
+            body: fd,
+          });
+
+          if (!res.ok) {
+            const errorText = await res.text();
+            console.error('API Error:', res.status, errorText);
+            throw new Error(`HTTP ${res.status}: ${errorText}`);
+          }
+
+          const text = res.headers.get('result') || 'No text result received';
           const audio = await res.blob();
           apiResponse.classList.remove('hidden');
-          responseText.textContent = text || 'No text result received';
+          responseText.textContent = text;
           if (audio.size) {
             responseAudio.src = URL.createObjectURL(audio);
             responseAudio.classList.remove('hidden');
           }
           addHistory(text);
+
+          // Update currentPath based on mode
           if (contactMode) {
-            currentPath = 'type/number'; // Lock to type/number in contact mode
+            currentPath = 'type/number';
             resetApiPath();
           } else {
-            if (currentPath === "maincommand") {
+            if (currentPath === 'maincommand') {
               setupPathFlow(text);
               if (pathSteps.length > 0) {
                 currentPath = pathSteps[stepIndex++];
@@ -301,8 +340,9 @@
             }
           }
           showToast('ارسال موفق', 'success');
-        } catch {
-          showToast('خطا در ارسال', 'error');
+        } catch (error) {
+          console.error('Request failed:', error);
+          showToast(`خطا در ارسال: ${error.message}`, 'error');
           resetApiPath();
         } finally {
           sendButton.disabled = false;
