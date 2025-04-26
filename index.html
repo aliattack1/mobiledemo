@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<!DOCTYPE html><html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -94,107 +93,44 @@
             const apiResponse = document.getElementById('apiResponse');
             const responseText = document.getElementById('responseText');
             const responseAudio = document.getElementById('responseAudio');
-            const statusToast = document.getElementById('statusToast');
+            const statusToast = document.getElementById('statusToast');// State
+        let cardData = {};
+        let contactMode = false;
+        let mediaRecorder, audioChunks = [], audioBlob;
+        let currentPath = 'maincommand';
+        let resultsHistory = [];
+        let animationInterval;
 
-            // State
-            let cardData = {};
-            let contactMode = false;
-            let mediaRecorder, audioChunks = [], audioBlob;
-            let currentPath = 'maincommand';
-            let resultsHistory = [];
-            let animationInterval;
+        // Utilities
+        function showToast(message, type) {
+            statusToast.textContent = message;
+            statusToast.classList.remove('bg-gray-800','bg-green-500','bg-red-500','bg-blue-500');
+            statusToast.classList.add(type==='success'?'bg-green-500':type==='error'?'bg-red-500':'bg-blue-500');
+            statusToast.classList.replace('opacity-0','opacity-100');
+            setTimeout(()=>statusToast.classList.replace('opacity-100','opacity-0'),3000);
+        }
+        function animateWaveform() {
+            animationInterval = setInterval(()=>{
+                waveBars.forEach(bar => bar.style.height = (Math.floor(Math.random()*60)+10) + 'px');
+            },100);
+        }
+        function resetApiPath(){ currentPath='maincommand'; }
+        function addResultToHistory(text){
+            resultsHistory.push(text);
+            const item = document.createElement('div');
+            item.className='bg-white/20 p-3 rounded-lg text-gray-100 text-sm fade-in';
+            item.textContent = text;
+            historyContent.prepend(item);
+        }
+        function checkMicrophonePermission(){
+            navigator.mediaDevices.getUserMedia({audio:true})
+              .then(stream=>{ stream.getTracks().forEach(t=>t.stop()); permissionStatus.className='mb-4 p-3 rounded-lg text-sm text-white bg-green-500/20'; permissionStatus.textContent='میکروفن فعال است'; })
+              .catch(()=>{ permissionStatus.className='mb-4 p-3 rounded-lg text-sm text-white bg-red-500/20'; permissionStatus.textContent='دسترسی میکروفن رد شد'; recordButton.disabled=true; });
+            permissionStatus.classList.remove('hidden');
+        }
 
-            // Utilities
-            function showToast(message, type) {
-                statusToast.textContent = message;
-                statusToast.classList.remove('bg-gray-800','bg-green-500','bg-red-500','bg-blue-500');
-                statusToast.classList.add(type==='success'?'bg-green-500':type==='error'?'bg-red-500':'bg-blue-500');
-                statusToast.classList.replace('opacity-0','opacity-100');
-                setTimeout(()=>statusToast.classList.replace('opacity-100','opacity-0'),3000);
-            }
-            function animateWaveform() {
-                animationInterval = setInterval(()=>{
-                    waveBars.forEach(bar => bar.style.height = (Math.floor(Math.random()*60)+10) + 'px');
-                },100);
-            }
-            function resetApiPath(){ currentPath='maincommand'; }
-            function addResultToHistory(text){
-                resultsHistory.push(text);
-                const item = document.createElement('div');
-                item.className='bg-white/20 p-3 rounded-lg text-gray-100 text-sm fade-in';
-                item.textContent = text;
-                historyContent.prepend(item);
-            }
-            function checkMicrophonePermission(){
-                navigator.mediaDevices.getUserMedia({audio:true})
-                  .then(stream=>{ stream.getTracks().forEach(t=>t.stop()); permissionStatus.className='mb-4 p-3 rounded-lg text-sm text-white bg-green-500/20'; permissionStatus.textContent='میکروفن فعال است'; })
-                  .catch(()=>{ permissionStatus.className='mb-4 p-3 rounded-lg text-sm text-white bg-red-500/20'; permissionStatus.textContent='دسترسی میکروفن رد شد'; recordButton.disabled=true; });
-                permissionStatus.classList.replace('hidden','');
-            }
+        // Main Toggles
+        dasturBtn.addEventListener('click',()=>{ formContainer.classList.add('hidden'); mainContainer.classList.remove('hidden'); dasturBtn.classList.replace('bg-sky-500','bg-sky
 
-            // Main Toggles
-            dasturBtn.addEventListener('click',()=>{ formContainer.classList.add('hidden'); mainContainer.classList.remove('hidden'); dasturBtn.classList.replace('bg-sky-500','bg-sky-600'); formBtn.classList.replace('bg-sky-600','bg-sky-500'); });
-            formBtn.addEventListener('click',()=>{ mainContainer.classList.add('hidden'); formContainer.classList.remove('hidden'); formBtn.classList.replace('bg-sky-500','bg-sky-600'); dasturBtn.classList.replace('bg-sky-600','bg-sky-500'); });
+Explain expected behavior.
 
-            // Sub Toggles
-            directModeBtn.addEventListener('click',()=>{ contactMode=false; directModeBtn.classList.replace('bg-gray-500','bg-indigo-600'); contactModeBtn.classList.replace('bg-indigo-600','bg-gray-500'); });
-            contactModeBtn.addEventListener('click',()=>{ contactMode=true; contactModeBtn.classList.replace('bg-gray-500','bg-indigo-600'); directModeBtn.classList.replace('bg-indigo-600','bg-gray-500'); });
-            directModeBtn.click();
-
-            // Form Submission
-            userForm.addEventListener('submit',e=>{ e.preventDefault(); const n=document.getElementById('fullName').value.trim(), c=document.getElementById('cardNumber').value.trim(); if(n&&c){ cardData[n]=c; jsonOutput.textContent=JSON.stringify(cardData,null,2); jsonOutput.classList.replace('hidden',''); userForm.reset(); }});
-
-            // Recording
-            recordButton.addEventListener('click',()=>{ if(mediaRecorder&&mediaRecorder.state==='recording') stopRecording(); else startRecording(); });
-            function startRecording(){
-                navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
-                    mediaRecorder=new MediaRecorder(stream);
-                    audioChunks=[];
-                    mediaRecorder.ondataavailable=e=>audioChunks.push(e.data);
-                    mediaRecorder.onstop=()=>{
-                        audioBlob=new Blob(audioChunks,{type:'audio/mp4'});
-                        sendButton.disabled=false;
-                        const url=URL.createObjectURL(audioBlob);
-                        audioPlayer.src=url;
-                        audioPlayerContainer.classList.replace('hidden','');
-                    };
-                    mediaRecorder.start(); animateWaveform();
-                    recordIcon.classList.replace('fa-microphone','fa-stop');
-                    recordButton.classList.add('recording-animation','bg-red-600','hover:bg-red-700');
-                    recordButton.classList.remove('bg-blue-600','hover:bg-blue-700');
-                });
-            }
-            function stopRecording(){
-                mediaRecorder.stop();
-                clearInterval(animationInterval);
-                waveBars.forEach(b=>b.style.height='10px');
-                recordIcon.classList.replace('fa-stop','fa-microphone');
-                recordButton.classList.remove('recording-animation','bg-red-600','hover:bg-red-700');
-                recordButton.classList.add('bg-blue-600','hover:bg-blue-700');
-            }
-
-            // Send Request
-            sendButton.addEventListener('click',async()=>{
-                try{
-                    sendButton.disabled=true; showToast('در حال ارسال...','info');
-                    const fd=new FormData();
-                    fd.append('voice',audioBlob,'rec.m4a');
-                    if(contactMode){ const blob=new Blob([JSON.stringify(cardData)],{type:'application/json'}); fd.append('datalist',blob,'datalist.json'); }
-                    const res=await fetch(`https://api.example.com/${currentPath}${contactMode?'/type/number':''}`,{method:'POST',body:fd});
-                    if(!res.ok) throw new Error('ارسال ناموفق');
-                    const text=res.headers.get('result');
-                    const audio=await res.blob();
-                    apiResponse.classList.replace('hidden','');
-                    responseText.textContent=text||'';
-                    addResultToHistory(text);
-                    if(audio.size){ responseAudio.src=URL.createObjectURL(audio); responseAudio.classList.replace('hidden',''); }
-                    resetApiPath(); showToast('ارسال موفق','success');
-                } catch(e){ showToast('خطا در ارسال','error'); resetApiPath(); }
-                finally{ sendButton.disabled=false; }
-            });
-
-            checkMicrophonePermission();
-        });
-    </script>
-</body>
-</html>
