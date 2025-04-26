@@ -202,20 +202,20 @@
         contactMode = false;
         currentPath = 'maincommand';
         resetApiPath();
-        directModeBtn.classList.add('bg-indigo-600', 'text-white');
-        directModeBtn.classList.remove('bg-indigo-200', 'text-indigo-800');
-        contactModeBtn.classList.add('bg-teal-200', 'text-teal-800');
-        contactModeBtn.classList.remove('bg-teal-600', 'text-white');
+        contactModeBtn.classList.add('bg-sky-500', 'hover:bg-sky-600');
+        contactModeBtn.classList.remove('bg-sky-600', 'hover:bg-sky-700');
+        directModeBtn.classList.add('bg-sky-600', 'hover:bg-sky-700');
+        directModeBtn.classList.remove('bg-sky-500', 'hover:bg-sky-600');
       };
 
       contactModeBtn.onclick = () => {
         contactMode = true;
         currentPath = 'type/number';
         resetApiPath();
-        contactModeBtn.classList.add('bg-teal-600', 'text-white');
-        contactModeBtn.classList.remove('bg-teal-200', 'text-teal-800');
-        directModeBtn.classList.add('bg-indigo-200', 'text-indigo-800');
-        directModeBtn.classList.remove('bg-indigo-600', 'text-white');
+        contactModeBtn.classList.add('bg-sky-600', 'hover:bg-sky-700');
+        contactModeBtn.classList.remove('bg-sky-500', 'hover:bg-sky-600');
+        directModeBtn.classList.add('bg-sky-500', 'hover:bg-sky-600');
+        directModeBtn.classList.remove('bg-sky-600', 'hover:bg-sky-700');
       };
 
       userForm.onsubmit = e => {
