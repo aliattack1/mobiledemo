@@ -30,9 +30,9 @@
       <h1 class="text-4xl font-extrabold text-white tracking-tight">Parsian <span class="text-blue-300">Voice</span></h1>
     </div>
     <!-- Toggle Main/Form -->
-    <div class="flex justify-center mb-6 space-x-4 rtl:space-x-reverse">
-      <button id="dasturBtn" class="flex-1 py-3 rounded-xl bg-sky-600 text-white hover:bg-sky-700 shadow-md">دستور</button>
-      <button id="formBtn" class="flex-1 py-3 rounded-xl bg-sky-500 text-white hover:bg-sky-600 shadow-md">فرم</button>
+    <div class="flex justify-center mb-6 space-x-4 rtl:space-x-reverse bg-sky-500 rounded-xl p-1">
+      <button id="dasturBtn" class="flex-1 py-3 rounded-xl bg-sky-600 text-white hover:bg-sky-700">دستور</button>
+      <button id="formBtn" class="flex-1 py-3 rounded-xl bg-sky-500 text-white hover:bg-sky-600">فرم</button>
     </div>
     <!-- Form Section -->
     <div id="formContainer" class="hidden fade-in">
@@ -53,9 +53,9 @@
     <!-- Voice UI -->
     <div id="mainContainer">
       <!-- Sub-mode Toggle -->
-      <div class="flex justify-center items-center mb-6 space-x-4 rtl:space-x-reverse">
-        <button id="directModeBtn" class="flex-1 mode-btn bg-sky-600 text-white p-3 rounded-xl shadow-md"><i class="fas fa-location-arrow"></i><span>مستقیم</span></button>
-        <button id="contactModeBtn" class="flex-1 mode-btn bg-sky-500 text-white p-3 rounded-xl shadow-md"><i class="fas fa-address-book"></i><span>از مخاطبین</span></button>
+      <div class="flex justify-center items-center mb-6 space-x-4 rtl:space-x-reverse bg-sky-500 rounded-xl p-1">
+        <button id="directModeBtn" class="flex-1 mode-btn bg-sky-600 text-white p-3 rounded-xl"><i class="fas fa-location-arrow"></i><span>مستقیم</span></button>
+        <button id="contactModeBtn" class="flex-1 mode-btn bg-sky-500 text-white p-3 rounded-xl"><i class="fas fa-address-book"></i><span>از مخاطبین</span></button>
       </div>
       <!-- Record & Send -->
       <div class="flex flex-col items-center space-y-6 mb-6">
@@ -195,8 +195,8 @@
           });
       }
 
-      dasturBtn.onclick = () => { formContainer.classList.add('hidden'); mainContainer.classList.remove('hidden'); };
-      formBtn.onclick = () => { mainContainer.classList.add('hidden'); formContainer.classList.remove('hidden'); };
+      dasturBtn.onclick = () => { formContainer.classList.add('hidden'); mainContainer.classList.remove('hidden');dasturBtn.classList.add('bg-sky-600'); formBtn.classList.remove('bg-sky-600');};
+      formBtn.onclick = () => { mainContainer.classList.add('hidden'); formContainer.classList.remove('hidden');dasturBtn.classList.remove('bg-sky-600'); formBtn.classList.add('bg-sky-600'); };
 
       directModeBtn.onclick = () => {
         contactMode = false;
