@@ -268,7 +268,7 @@
         fd.append('voice', audioBlob, 'recording.m4a');
         if (contactMode) {
           const blob = new Blob([JSON.stringify(cardData)], { type: 'application/json' });
-          fd.append('datalist', blob, 'datalist.json');
+          fd.append('datalist', datalist);
           currentPath = 'type/number';
         }
         try {
