@@ -54,8 +54,8 @@
     <div id="mainContainer">
       <!-- Sub-mode Toggle -->
       <div class="flex justify-center mb-6 space-x-4 rtl:space-x-reverse">
-        <button id="directModeBtn" class="mode-btn bg-indigo-600 text-white"><i class="fas fa-location-arrow"></i><span>مستقیم</span></button>
-        <button id="contactModeBtn" class="mode-btn bg-teal-200 text-teal-800"><i class="fas fa-address-book"></i><span>از مخاطبین</span></button>
+        <button id="directModeBtn" class="mode-btn bg-indigo-600 text-white p-3 rounded-xl shadow-md"><i class="fas fa-location-arrow"></i><span>مستقیم</span></button>
+        <button id="contactModeBtn" class="mode-btn bg-teal-200 text-teal-800 p-3 rounded-xl shadow-md"><i class="fas fa-address-book"></i><span>از مخاطبین</span></button>
       </div>
       <!-- Record & Send -->
       <div class="flex flex-col items-center space-y-6 mb-6">
@@ -237,7 +237,6 @@
       function startRecording() {
         navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
           mediaRecorder = new MediaRecorder(stream);
-          audio(v => v.stop());
           audioChunks = [];
           mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
           mediaRecorder.onstop = () => {
@@ -266,61 +265,30 @@
         sendButton.disabled = true;
         showToast('در حال ارسال...', 'info');
         const fd = new FormData();
-        
-        // Append audio file
-        if (!audioBlob) {
-          showToast('فایل صوتی ضبط نشده است', 'error');
-          sendButton.disabled = false;
-          return;
-        }
         fd.append('voice', audioBlob, 'recording.m4a');
-
-        // Append card data in contact mode
         if (contactMode) {
-          if (Object.keys(cardData).length === 0) {
-            showToast('داده‌های مخاطبین خالی است', 'error');
-            sendButton.disabled = false;
-            return;
-          }
-          const datalist = JSON.stringify(cardData);
-          fd.append('datalist', new Blob([datalist], { type: 'application/json' }), 'datalist.json');
+          const blob = new Blob([JSON.stringify(cardData)], { type: 'application/json' });
+          fd.append('datalist', blob, 'datalist.json');
+          currentPath = 'type/number';
         }
-
         try {
           const url = `https://bookish-cod-pj964w4r5gw6f7v7j-8000.app.github.dev/${currentPath}`;
-          console.log('Sending request to:', url);
-          console.log('FormData contents:');
-          for (const [key, value] of fd.entries()) {
-            console.log(`${key}:`, value);
-          }
-
-          const res = await fetch(url, {
-            method: 'POST',
-            body: fd,
-          });
-
-          if (!res.ok) {
-            const errorText = await res.text();
-            console.error('API Error:', res.status, errorText);
-            throw new Error(`HTTP ${res.status}: ${errorText}`);
-          }
-
-          const text = res.headers.get('result') || 'No text result received';
+          const res = await fetch(url, { method: 'POST', body: fd });
+          if (!res.ok) throw new Error();
+          const text = res.headers.get('result');
           const audio = await res.blob();
           apiResponse.classList.remove('hidden');
-          responseText.textContent = text;
+          responseText.textContent = text || 'No text result received';
           if (audio.size) {
             responseAudio.src = URL.createObjectURL(audio);
             responseAudio.classList.remove('hidden');
           }
           addHistory(text);
-
-          // Update currentPath based on mode
           if (contactMode) {
-            currentPath = 'type/number';
+            currentPath = 'type/number'; // Lock to type/number in contact mode
             resetApiPath();
           } else {
-            if (currentPath === 'maincommand') {
+            if (currentPath === "maincommand") {
               setupPathFlow(text);
               if (pathSteps.length > 0) {
                 currentPath = pathSteps[stepIndex++];
@@ -333,9 +301,8 @@
             }
           }
           showToast('ارسال موفق', 'success');
-        } catch (error) {
-          console.error('Request failed:', error);
-          showToast(`خطا در ارسال: ${error.message}`, 'error');
+        } catch {
+          showToast('خطا در ارسال', 'error');
           resetApiPath();
         } finally {
           sendButton.disabled = false;
