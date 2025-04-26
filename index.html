@@ -1,234 +1,129 @@
-<!DOCTYPE html><html lang="fa" dir="rtl">
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>دستیار صوتی پارسیان</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    body { background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%); }
-    .glass-container { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
-    @keyframes pulse { 0% { box-shadow:0 0 0 0 rgba(239,68,68,0.8);} 70% { box-shadow:0 0 0 20px rgba(239,68,68,0);} 100% { box-shadow:0 0 0 0 rgba(239,68,68,0);} }
-    .recording-animation { animation: pulse 1.5s infinite; }
-    .fade-in { animation: fadeIn 0.5s ease-in; }
-    @keyframes fadeIn { from { opacity:0; transform:translateY(10px);} to { opacity:1; transform:translateY(0);} }
-    .mode-btn { @apply flex items-center justify-center space-x-2 rtl:space-x-reverse py-2 px-4 rounded-full font-medium transition-colors; }
-    .mode-btn.direct { @apply bg-indigo-600 text-white hover:bg-indigo-700; }
-    .mode-btn.contact { @apply bg-teal-600 text-white hover:bg-teal-700; }
-    /* Simple audio player styling */
-    audio { @apply w-full rounded-lg; }
-  </style>
+    <meta charset="UTF-8">
+    <title>ضبط صدا و ارسال</title>
+    <style>
+        body {
+            font-family: 'Vazir', sans-serif;
+            background-color: #f4f6f8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px;
+        }
+
+        .container {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #recordButton {
+            background-color: #f44336;
+            margin-bottom: 20px;
+        }
+
+        #recordButton.recording {
+            background-color: #ff5722;
+        }
+
+        audio {
+            width: 100%;
+            margin-top: 20px;
+            outline: none;
+            border-radius: 10px;
+            background: #f1f1f1;
+            padding: 8px;
+        }
+    </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-6">
-  <div class="glass-container rounded-2xl shadow-2xl p-6 w-full max-w-lg">
-    <!-- Header -->
-    <div class="flex items-center justify-center mb-6">
-      <i class="fas fa-university text-3xl text-blue-300 ml-2"></i>
-      <h1 class="text-3xl font-bold text-white">Parsian <span class="text-blue-300">Voice</span></h1>
+<body>
+
+<div class="container">
+    <h2>ضبط صدا و ارسال</h2>
+
+    <button id="recordButton">شروع ضبط</button>
+
+    <div id="audioPlayerContainer" style="display: none;">
+        <audio id="audioPlayer" controls></audio>
     </div>
-    <!-- Toggle Main/Form -->
-    <div class="flex mb-6">
-      <button id="dasturBtn" class="flex-1 mx-1 py-2 rounded-2xl bg-sky-600 text-white">دستور</button>
-      <button id="formBtn" class="flex-1 mx-1 py-2 rounded-2xl bg-sky-500 text-white">فرم</button>
+
+    <div class="buttons">
+        <button id="sendDirect">ارسال مستقیم</button>
+        <button id="sendToContacts">ارسال به مخاطبین</button>
     </div>
-    <!-- Form Section -->
-    <div id="formContainer" class="hidden fade-in">
-      <h2 class="text-xl font-semibold text-white mb-4">اطلاعات کاربر</h2>
-      <form id="userForm" class="space-y-4">
-        <div>
-          <label class="block text-white mb-1" for="fullName">نام کامل</label>
-          <input id="fullName" name="fullName" type="text" placeholder="محمد رضایی" class="w-full p-2 rounded-lg bg-white/20 text-white focus:ring-2 focus:ring-sky-400" required>
-        </div>
-        <div>
-          <label class="block text-white mb-1" for="cardNumber">شماره کارت</label>
-          <input id="cardNumber" name="cardNumber" type="text" placeholder="6037 9900 1234 5678" maxlength="19" class="w-full p-2 rounded-lg bg-white/20 text-white focus:ring-2 focus:ring-sky-400" required>
-        </div>
-        <button type="submit" class="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl">ارسال</button>
-        <pre id="jsonOutput" class="hidden mt-4 bg-black/20 text-white p-2 rounded-lg"></pre>
-      </form>
-    </div>
-    <!-- Voice UI -->
-    <div id="mainContainer">
-      <!-- Sub-mode Toggle -->
-      <div class="flex justify-center mb-6 space-x-4 rtl:space-x-reverse">
-        <button id="directModeBtn" class="mode-btn direct"><i class="fas fa-location-arrow"></i><span>مستقیم</span></button>
-        <button id="contactModeBtn" class="mode-btn contact"><i class="fas fa-address-book"></i><span>از مخاطبین</span></button>
-      </div>
-      <!-- Record & Send -->
-      <div class="flex flex-col items-center space-y-6 mb-6">
-        <button id="recordButton" class="bg-blue-600 hover:bg-blue-700 text-white p-8 rounded-full shadow-lg transition-transform hover:scale-110">
-          <i id="recordIcon" class="fas fa-microphone text-4xl"></i>
-        </button>
-        <button id="sendButton" disabled class="bg-green-500 hover:bg-green-600 text-white py-3 px-8 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">
-          ارسال
-        </button>
-      </div>
-      <!-- Waveform -->
-      <div id="waveform" class="hidden flex h-16 items-end justify-center gap-2 mb-6">
-        <div class="wave-bar w-2 bg-gradient-to-b from-sky-200 to-sky-800 rounded-md"></div>
-        <div class="wave-bar w-2 bg-gradient-to-b from-sky-200 to-sky-800 rounded-md"></div>
-        <div class="wave-bar w-2 bg-gradient-to-b from-sky-200 to-sky-800 rounded-md"></div>
-        <div class="wave-bar w-2 bg-gradient-to-b from-sky-200 to-sky-800 rounded-md"></div>
-        <div class="wave-bar w-2 bg-gradient-to-b from-sky-200 to-sky-800 rounded-md"></div>
-      </div>
-      <!-- Permission Status -->
-      <div id="permissionStatus" class="hidden mb-4 p-3 text-white rounded-lg bg-red-500/20 text-center"></div>
-      <!-- Audio Player -->
-      <div id="audioPlayerContainer" class="hidden mb-6 fade-in">
-        <audio id="audioPlayer" controls class="w-full"></audio>
-      </div>
-      <!-- API Response -->
-      <div id="apiResponse" class="hidden p-4 bg-white/10 rounded-2xl mb-6 fade-in">
-        <h3 class="text-white font-semibold mb-2">پاسخ دستیار</h3>
-        <p id="responseText" class="text-gray-100"></p>
-        <audio id="responseAudio" controls class="hidden w-full mt-2"></audio>
-      </div>
-      <!-- History -->
-      <div id="historyContainer" class="p-4 bg-white/10 rounded-2xl max-h-40 overflow-y-auto">
-        <h3 class="text-white font-semibold mb-2">تاریخچه</h3>
-        <div id="historyContent" class="space-y-2 text-gray-100"></div>
-      </div>
-    </div>
-  </div>
-  <div class="text-center text-white text-xs mt-4">powered by caspian</div>
-  <div id="statusToast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 text-white px-6 py-3 rounded-lg shadow-xl opacity-0"></div>  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const dasturBtn = document.getElementById('dasturBtn');
-      const formBtn = document.getElementById('formBtn');
-      const mainContainer = document.getElementById('mainContainer');
-      const formContainer = document.getElementById('formContainer');
-      const directModeBtn = document.getElementById('directModeBtn');
-      const contactModeBtn = document.getElementById('contactModeBtn');
-      const recordButton = document.getElementById('recordButton');
-      const recordIcon = document.getElementById('recordIcon');
-      const sendButton = document.getElementById('sendButton');
-      const waveform = document.getElementById('waveform');
-      const waveBars = document.querySelectorAll('.wave-bar');
-      const audioPlayerContainer = document.getElementById('audioPlayerContainer');
-      const audioPlayer = document.getElementById('audioPlayer');
-      const apiResponse = document.getElementById('apiResponse');
-      const responseText = document.getElementById('responseText');
-      const responseAudio = document.getElementById('responseAudio');
-      const historyContent = document.getElementById('historyContent');
-      const permissionStatus = document.getElementById('permissionStatus');
-      const userForm = document.getElementById('userForm');
-      const jsonOutput = document.getElementById('jsonOutput');
-      const statusToast = document.getElementById('statusToast');
+</div>
 
-      let contactMode = false;
-      let cardData = {};
-      let mediaRecorder, audioChunks = [], audioBlob;
-      let currentPath = 'maincommand';
-      let animationInterval;
+<script>
+    let mediaRecorder;
+    let audioChunks = [];
 
-      function showToast(message, type) {
-        statusToast.textContent = message;
-        statusToast.className = '';
-        statusToast.classList.add('fixed','bottom-6','left-1/2','transform','-translate-x-1/2','text-white','px-6','py-3','rounded-lg','shadow-xl');
-        statusToast.classList.add(type==='success'?'bg-green-500':type==='error'?'bg-red-500':'bg-blue-500');
-        statusToast.classList.add('opacity-100');
-        setTimeout(() => statusToast.classList.remove('opacity-100'), 3000);
-      }
+    const recordButton = document.getElementById('recordButton');
+    const audioPlayerContainer = document.getElementById('audioPlayerContainer');
+    const audioPlayer = document.getElementById('audioPlayer');
 
-      function animateWaveform() {
-        waveform.classList.remove('hidden');
-        animationInterval = setInterval(() => waveBars.forEach(b => b.style.height = (Math.random()*60+10)+'px'), 100);
-      }
+    recordButton.addEventListener('click', async () => {
+        if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
 
-      function stopWaveform() {
-        clearInterval(animationInterval);
-        waveBars.forEach(b => b.style.height = '10px');
-        waveform.classList.add('hidden');
-      }
+                    mediaRecorder.start();
+                    recordButton.classList.add('recording');
+                    recordButton.innerText = 'در حال ضبط... (برای توقف کلیک کنید)';
 
-      function resetApiPath() { currentPath = 'maincommand'; }
+                    audioChunks = [];
 
-      function addHistory(text) {
-        const div = document.createElement('div');
-        div.className = 'bg-white/20 p-3 rounded-lg text-gray-100 text-sm fade-in';
-        div.textContent = text;
-        historyContent.prepend(div);
-      }
+                    mediaRecorder.addEventListener('dataavailable', event => {
+                        audioChunks.push(event.data);
+                    });
 
-      function checkMic() {
-        navigator.mediaDevices.getUserMedia({audio:true})
-          .then(stream => {
-            stream.getTracks().forEach(t => t.stop());
-            permissionStatus.className = 'mb-4 p-3 rounded-lg text-white bg-green-500/20';
-            permissionStatus.textContent = 'میکروفن فعال است';
-            permissionStatus.classList.remove('hidden');
-          })
-          .catch(() => {
-            permissionStatus.className = 'mb-4 p-3 rounded-lg text-white bg-red-500/20';
-            permissionStatus.textContent = 'دسترسی میکروفن رد شد';
-            permissionStatus.classList.remove('hidden');
-            recordButton.disabled = true;
-          });
-      }
-
-      dasturBtn.onclick = () => { formContainer.classList.add('hidden'); mainContainer.classList.remove('hidden'); };
-      formBtn.onclick = () => { mainContainer.classList.add('hidden'); formContainer.classList.remove('hidden'); };
-
-      directModeBtn.onclick = () => { contactMode = false; directModeBtn.classList.replace('bg-gray-500','bg-indigo-600'); contactModeBtn.classList.replace('bg-indigo-600','bg-gray-500'); };
-      contactModeBtn.onclick = () => { contactMode = true; contactModeBtn.classList.replace('bg-gray-500','bg-teal-600'); directModeBtn.classList.replace('bg-teal-600','bg-gray-500'); };
-
-      userForm.onsubmit = e => {
-        e.preventDefault();
-        const n = userForm.fullName.value.trim(), c = userForm.cardNumber.value.trim();
-        if(n && c) { cardData[n] = c; jsonOutput.textContent = JSON.stringify(cardData,null,2); jsonOutput.classList.remove('hidden'); userForm.reset(); }
-      };
-
-      recordButton.onclick = () => {
-        if(mediaRecorder && mediaRecorder.state === 'recording') stopRecording(); else startRecording();
-      };
-
-      function startRecording() {
-        navigator.mediaDevices.getUserMedia({audio:true}).then(stream => {
-          mediaRecorder = new MediaRecorder(stream);
-          audioChunks = [];
-          mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-          mediaRecorder.onstop = () => {
-            audioBlob = new Blob(audioChunks,{type:'audio/mp4'});
-            sendButton.disabled = false;
-            audioPlayer.src = URL.createObjectURL(audioBlob);
-            audioPlayerContainer.classList.remove('hidden');
-          };
-          mediaRecorder.start();
-          animateWaveform();
-          recordIcon.classList.replace('fa-microphone','fa-stop');
-          recordButton.classList.add('recording-animation','bg-red-600','hover:bg-red-700');
-          recordButton.classList.remove('bg-blue-600','hover:bg-blue-700');
-        });
-      }
-
-      function stopRecording() {
-        mediaRecorder.stop();
-        stopWaveform();
-        recordIcon.classList.replace('fa-stop','fa-microphone');
-        recordButton.classList.remove('recording-animation','bg-red-600','hover:bg-red-700');
-        recordButton.classList.add('bg-blue-600','hover:bg-blue-700');
-      }
-
-      sendButton.onclick = async () => {
-        sendButton.disabled = true;
-        showToast('در حال ارسال...','info');
-        const fd = new FormData();
-        fd.append('voice', audioBlob, 'recording.m4a');
-        if(contactMode) { const blob = new Blob([JSON.stringify(cardData)],{type:'application/json'}); fd.append('datalist', blob, 'datalist.json'); }
-        try {
-          const res = await fetch(`https://api.example.com/${currentPath}${contactMode?'/type/number':''}`,{method:'POST',body:fd});
-          if(!res.ok) throw new Error();
-          const text = res.headers.get('result');
-          const audio = await res.blob();
-          apiResponse.classList.remove('hidden');
-          responseText.textContent = text || '';
-          if(audio.size) { responseAudio.src = URL.createObjectURL(audio); responseAudio.classList.remove('hidden'); }
-          resetApiPath(); showToast('ارسال موفق','success');
-        } catch { showToast('خطا در ارسال','error'); resetApiPath(); }
-        finally { sendButton.disabled = false; }
-      };
-
-      checkMic();
+                    mediaRecorder.addEventListener('stop', () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        audioPlayer.src = audioUrl;
+                        audioPlayerContainer.style.display = 'block';
+                    });
+                } catch (error) {
+                    console.error('مشکل در دسترسی به میکروفون:', error);
+                }
+            } else {
+                alert('مرورگر شما از ضبط صدا پشتیبانی نمی‌کند.');
+            }
+        } else if (mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+            recordButton.classList.remove('recording');
+            recordButton.innerText = 'شروع ضبط';
+        }
     });
-  </script></body>
+</script>
+
+</body>
 </html>
