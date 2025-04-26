@@ -6,240 +6,188 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body { background: linear-gradient(135deg,#1E3A8A 0%,#3B82F6 100%); }
+    body { background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%); }
     .glass-container { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,0.2); }
-    @keyframes pulse {
-      0% { box-shadow:0 0 0 0 rgba(239,68,68,0.8); }
-      70% { box-shadow:0 0 0 20px rgba(239,68,68,0); }
-      100% { box-shadow:0 0 0 0 rgba(239,68,68,0); }
-    }
+    @keyframes pulse { 0%{ box-shadow:0 0 0 0 rgba(239,68,68,0.8);}70%{box-shadow:0 0 0 20px rgba(239,68,68,0);}100%{box-shadow:0 0 0 0 rgba(239,68,68,0);} }
     .recording-animation { animation:pulse 1.5s infinite; }
     .fade-in { animation:fadeIn 0.5s ease-in; }
-    @keyframes fadeIn {
-      from { opacity:0; transform:translateY(10px); }
-      to { opacity:1; transform:translateY(0); }
-    }
-    #statusToast { backdrop-filter: blur(8px); background: rgba(0,0,0,0.7); }
-    #jsonOutput { background: rgba(0,0,0,0.3); color:#fff; padding:1rem; margin-top:1rem; border-radius:0.5rem; font-family:monospace; font-size:0.875rem; max-height:150px; overflow-y:auto; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);} }
+    /* Enhanced Buttons */
+    .mode-btn { @apply flex items-center justify-center space-x-2 rtl:space-x-reverse py-2 px-4 rounded-full font-medium transition-all; }
+    .mode-btn i { @apply text-lg; }
+    .mode-btn.direct { @apply bg-indigo-600 text-white hover:bg-indigo-700 shadow-md; }
+    .mode-btn.contact { @apply bg-teal-600 text-white hover:bg-teal-700 shadow-md; }
+    /* Audio Player Card */
+    .audio-card { @apply bg-white/20 backdrop-blur-md rounded-2xl p-4 mb-6 flex items-center justify-between shadow-lg transition-transform hover:scale-105; }
+    .audio-card audio { @apply w-full outline-none; }
   </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-6">
-  <div>
-    <div class="glass-container rounded-2xl shadow-2xl p-6 w-full max-w-lg">
-      <!-- Header -->
-      <div class="flex items-center justify-center mb-4">
-        <i class="fas fa-university text-2xl text-blue-300 ml-2"></i>
-        <h1 class="text-2xl font-bold text-white">Parsian <span class="text-blue-300">Voice</span></h1>
+  <div class="glass-container rounded-2xl shadow-2xl p-6 w-full max-w-lg">
+    <!-- Header -->
+    <div class="flex items-center justify-center mb-4">
+      <i class="fas fa-university text-2xl text-blue-300 ml-2"></i>
+      <h1 class="text-2xl font-bold text-white">Parsian <span class="text-blue-300">Voice</span></h1>
+    </div>
+    <!-- Main/Form Toggle -->
+    <div class="flex mb-4">
+      <button id="dasturBtn" class="flex-1 mx-1 py-2 rounded-xl bg-sky-600 text-white">دستور</button>
+      <button id="formBtn" class="flex-1 mx-1 py-2 rounded-xl bg-sky-500 text-white">فرم</button>
+    </div>
+    <!-- Main Voice UI -->
+    <div id="mainContainer">
+      <!-- Sub-mode Toggle -->
+      <div class="flex justify-center mb-6 space-x-4 rtl:space-x-reverse">
+        <button id="directModeBtn" class="mode-btn direct"><i class="fas fa-location-arrow"></i><span>مستقیم</span></button>
+        <button id="contactModeBtn" class="mode-btn contact"><i class="fas fa-address-book"></i><span>از مخاطبین</span></button>
       </div>
-      <!-- Main/Form Toggle -->
-      <div class="flex mb-4">
-        <button id="dasturBtn" class="flex-1 mx-1 py-2 rounded-xl bg-sky-600 text-white font-medium hover:bg-sky-700">دستور</button>
-        <button id="formBtn" class="flex-1 mx-1 py-2 rounded-xl bg-sky-500 text-white font-medium hover:bg-sky-600">فرم</button>
+      <!-- Controls -->
+      <div class="flex flex-col items-center space-y-6 mb-6">
+        <button id="recordButton" class="bg-blue-600 hover:bg-blue-700 text-white p-8 rounded-full shadow-lg transform transition-transform hover:scale-110">
+          <i id="recordIcon" class="fas fa-microphone text-4xl"></i>
+        </button>
+        <button id="sendButton" disabled class="bg-green-500 hover:bg-green-600 text-white py-3 px-8 rounded-xl flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+          <i class="fas fa-paper-plane"></i><span>ارسال</span>
+        </button>
       </div>
-      <!-- Form Section -->
-      <div id="formContainer" class="hidden p-4 bg-white/10 rounded-xl border border-white/20 fade-in">
-        <h2 class="text-xl font-semibold text-white mb-4">اطلاعات کاربر</h2>
-        <form id="userForm" class="space-y-4">
-          <div>
-            <label for="fullName" class="block text-white mb-1">نام کامل</label>
-            <input type="text" id="fullName" name="fullName" placeholder="محمد رضایی" class="w-full p-2 rounded-lg bg-white/20 placeholder-gray-200 text-white focus:ring-2 focus:ring-sky-400" required>
-          </div>
-          <div>
-            <label for="cardNumber" class="block text-white mb-1">شماره کارت</label>
-            <input type="text" id="cardNumber" name="cardNumber" placeholder="6037 9900 1234 5678" maxlength="19" class="w-full p-2 rounded-lg bg-white/20 placeholder-gray-200 text-white focus:ring-2 focus:ring-sky-400" required>
-          </div>
-          <button type="submit" class="w-full py-3 rounded-xl bg-green-500 hover:bg-green-600 text-white font-semibold">ارسال</button>
-        </form>
-        <div id="jsonOutput" class="hidden"></div>
+      <!-- Waveform -->
+      <div id="waveform" class="hidden flex h-16 items-end justify-center gap-2 mb-6">
+        <div class="wave-bar w-2 bg-gradient-to-b from-sky-200 to-sky-800 rounded-md"></div>
+        <div class="wave-bar w-2 bg-gradient-to-b from-sky-200 to-sky-800 rounded-md"></div>
+        <div class="wave-bar w-2 bg-gradient-to-b from-sky-200 to-sky-800 rounded-md"></div>
+        <div class="wave-bar w-2 bg-gradient-to-b from-sky-200 to-sky-800 rounded-md"></div>
+        <div class="wave-bar w-2 bg-gradient-to-b from-sky-200 to-sky-800 rounded-md"></div>
       </div>
-      <!-- Voice UI -->
-      <div id="mainContainer">
-        <div id="permissionStatus" class="hidden mb-4 p-3 rounded-lg text-sm text-white bg-blue-500/20"></div>
-        <!-- Waveform -->
-        <div id="waveform" class="hidden fade-in flex h-16 items-end justify-center gap-2 mb-4">
-          <div class="wave-bar w-2 bg-gradient-to-b from-sky-200 to-sky-800 rounded-md"></div>
-          <div class="wave-bar w-2 bg-gradient-to-b from-sky-200 to-sky-800 rounded-md"></div>
-          <div class="wave-bar w-2 bg-gradient-to-b from-sky-200 to-sky-800 rounded-md"></div>
-          <div class="wave-bar w-2 bg-gradient-to-b from-sky-200 to-sky-800 rounded-md"></div>
-          <div class="wave-bar w-2 bg-gradient-to-b from-sky-200 to-sky-800 rounded-md"></div>
-        </div>
-        <!-- Sub-mode Toggle -->
-        <div class="flex justify-center mb-4 space-x-4 rtl:space-x-reverse">
-          <button id="directModeBtn" class="px-4 py-2 bg-indigo-600 text-white rounded-full">مستقیم</button>
-          <button id="contactModeBtn" class="px-4 py-2 bg-gray-500 text-white rounded-full hover:bg-gray-600">از مخاطبین</button>
-        </div>
-        <!-- Controls -->
-        <div class="flex flex-col space-y-6">
-          <button id="recordButton" class="bg-blue-600 hover:bg-blue-700 text-white p-8 rounded-full mx-auto shadow-lg">
-            <i id="recordIcon" class="fas fa-microphone text-4xl"></i>
-          </button>
-          <button id="sendButton" disabled class="bg-green-500 hover:bg-green-600 text-white py-3 px-8 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2">
-            <i class="fas fa-paper-plane"></i><span>ارسال</span>
-          </button>
-        </div>
-        <!-- API Response -->
-        <div id="apiResponse" class="hidden mt-6 p-6 bg-white/10 rounded-xl border border-white/20 fade-in">
-          <h3 class="font-semibold text-white mb-3 text-lg">پاسخ دستیار</h3>
-          <div id="responseText" class="text-gray-100 mb-3"></div>
-          <audio id="responseAudio" controls class="hidden w-full"></audio>
-        </div>
-        <!-- Audio Playback -->
-        <div id="audioPlayerContainer" class="hidden mt-6 fade-in">
-          <audio id="audioPlayer" controls class="w-full rounded-lg"></audio>
-        </div>
-        <!-- History -->
-        <div id="historyContainer" class="mt-8 p-6 bg-white/10 rounded-xl max-h-40 overflow-y-auto">
-          <h3 class="text-lg font-semibold text-white mb-3">تاریخچه فرمان‌ها</h3>
-          <div id="historyContent" class="space-y-3"></div>
-        </div>
+      <!-- API Response -->
+      <div id="apiResponse" class="hidden p-4 bg-white/20 rounded-2xl mb-6 fade-in">
+        <h3 class="text-white font-semibold mb-2">پاسخ دستیار</h3>
+        <p id="responseText" class="text-gray-100"></p>
+        <audio id="responseAudio" controls class="hidden w-full mt-2"></audio>
+      </div>
+      <!-- Audio Player Card -->
+      <div id="audioPlayerContainer" class="hidden audio-card">
+        <i class="fas fa-headphones-alt text-xl text-white ml-4"></i>
+        <audio id="audioPlayer" controls></audio>
+      </div>
+      <!-- History -->
+      <div id="historyContainer" class="p-4 bg-white/10 rounded-2xl max-h-40 overflow-y-auto">
+        <h3 class="text-white font-semibold mb-2">تاریخچه</h3>
+        <div id="historyContent" class="space-y-2 text-gray-100"></div>
       </div>
     </div>
-    <div class="text-center text-white text-xs mt-3">powered by caspian</div>
+    <!-- Form Section (hidden by default) -->
+    <div id="formContainer" class="hidden p-4 bg-white/10 rounded-xl border border-white/20 fade-in mt-6">
+      <h2 class="text-xl font-semibold text-white mb-4">اطلاعات کاربر</h2>
+      <form id="userForm" class="space-y-4">
+        <div><label for="fullName" class="block text-white mb-1">نام کامل</label><input type="text" id="fullName" name="fullName" placeholder="محمد رضایی" class="w-full p-2 rounded-lg bg-white/20 placeholder-gray-200 text-white focus:ring-2 focus:ring-sky-400" required></div>
+        <div><label for="cardNumber" class="block text-white mb-1">شماره کارت</label><input type="text" id="cardNumber" name="cardNumber" placeholder="6037 9900 1234 5678" maxlength="19" class="w-full p-2 rounded-lg bg-white/20 placeholder-gray-200 text-white focus:ring-2 focus:ring-sky-400" required></div>
+        <button type="submit" class="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl">ارسال</button>
+      </form>
+      <div id="jsonOutput" class="hidden mt-4"></div>
+    </div>
   </div>
+  <div class="text-center text-white text-xs mt-4">powered by caspian</div>
   <div id="statusToast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 text-white px-6 py-3 rounded-lg shadow-xl opacity-0"></div>  <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const
-      dasturBtn = document.getElementById('dasturBtn'),
-      formBtn = document.getElementById('formBtn'),
-      mainContainer = document.getElementById('mainContainer'),
-      formContainer = document.getElementById('formContainer'),
-      userForm = document.getElementById('userForm'),
-      jsonOutput = document.getElementById('jsonOutput'),
-      directModeBtn = document.getElementById('directModeBtn'),
-      contactModeBtn = document.getElementById('contactModeBtn'),
-      recordButton = document.getElementById('recordButton'),
-      recordIcon = document.getElementById('recordIcon'),
-      sendButton = document.getElementById('sendButton'),
-      permissionStatus = document.getElementById('permissionStatus'),
-      waveform = document.getElementById('waveform'),
-      waveBars = document.querySelectorAll('.wave-bar'),
-      audioPlayerContainer = document.getElementById('audioPlayerContainer'),
-      audioPlayer = document.getElementById('audioPlayer'),
-      apiResponse = document.getElementById('apiResponse'),
-      responseText = document.getElementById('responseText'),
-      responseAudio = document.getElementById('responseAudio'),
-      historyContent = document.getElementById('historyContent'),
-      statusToast = document.getElementById('statusToast');
+    document.addEventListener('DOMContentLoaded', () => {
+      const dasturBtn = document.getElementById('dasturBtn');
+      const formBtn = document.getElementById('formBtn');
+      const mainContainer = document.getElementById('mainContainer');
+      const formContainer = document.getElementById('formContainer');
+      const directModeBtn = document.getElementById('directModeBtn');
+      const contactModeBtn = document.getElementById('contactModeBtn');
+      const recordButton = document.getElementById('recordButton');
+      const recordIcon = document.getElementById('recordIcon');
+      const sendButton = document.getElementById('sendButton');
+      const waveform = document.getElementById('waveform');
+      const waveBars = document.querySelectorAll('.wave-bar');
+      const audioPlayerContainer = document.getElementById('audioPlayerContainer');
+      const audioPlayer = document.getElementById('audioPlayer');
+      const apiResponse = document.getElementById('apiResponse');
+      const responseText = document.getElementById('responseText');
+      const responseAudio = document.getElementById('responseAudio');
+      const historyContent = document.getElementById('historyContent');
+      const permissionStatus = document.getElementById('permissionStatus');
+      const userForm = document.getElementById('userForm');
+      const jsonOutput = document.getElementById('jsonOutput');
+      const statusToast = document.getElementById('statusToast');
 
-    let cardData = {}, contactMode = false,
-        mediaRecorder, audioChunks = [], audioBlob,
-        currentPath = 'maincommand', resultsHistory = [], animId;
+      let contactMode = false;
+      let cardData = {};
+      let mediaRecorder, audioChunks = [], audioBlob;
+      let animId;
 
-    function showToast(msg, type) {
-      statusToast.textContent = msg;
-      statusToast.className = '';
-      statusToast.classList.add('fixed','bottom-6','left-1/2','transform','-translate-x-1/2','text-white','px-6','py-3','rounded-lg','shadow-xl');
-      statusToast.classList.add(type==='success'?'bg-green-500':type==='error'?'bg-red-500':'bg-blue-500');
-      statusToast.classList.add('opacity-100');
-      setTimeout(()=>statusToast.classList.remove('opacity-100'),3000);
-    }
-
-    function animateWaveform() {
-      waveform.classList.remove('hidden');
-      animId = setInterval(()=> waveBars.forEach(b=> b.style.height = (Math.random()*60+10)+'px'),100);
-    }
-
-    function resetWaveform() {
-      clearInterval(animId);
-      waveBars.forEach(b=> b.style.height = '10px');
-      waveform.classList.add('hidden');
-    }
-
-    function resetApiPath(){ currentPath = 'maincommand'; }
-
-    function addHistory(txt) {
-      const div = document.createElement('div');
-      div.className = 'bg-white/20 p-3 rounded-lg text-gray-100 text-sm fade-in';
-      div.textContent = txt;
-      historyContent.prepend(div);
-    }
-
-    function checkMic() {
-      navigator.mediaDevices.getUserMedia({audio:true})
-        .then(s=>{ s.getTracks().forEach(t=>t.stop());
-          permissionStatus.className = 'mb-4 p-3 rounded-lg text-sm text-white bg-green-500/20';
-          permissionStatus.textContent = 'میکروفن فعال است';
-          permissionStatus.classList.remove('hidden');
-        })
-        .catch(_=>{
-          permissionStatus.className = 'mb-4 p-3 rounded-lg text-sm text-white bg-red-500/20';
-          permissionStatus.textContent = 'دسترسی میکروفن رد شد';
-          permissionStatus.classList.remove('hidden');
-          recordButton.disabled = true;
-        });
-    }
-
-    dasturBtn.onclick = ()=>{ formContainer.classList.add('hidden'); mainContainer.classList.remove('hidden'); };
-    formBtn.onclick = ()=>{ mainContainer.classList.add('hidden'); formContainer.classList.remove('hidden'); };
-    directModeBtn.onclick = ()=>{ contactMode=false; directModeBtn.classList.replace('bg-gray-500','bg-indigo-600'); contactModeBtn.classList.replace('bg-indigo-600','bg-gray-500'); };
-    contactModeBtn.onclick = ()=>{ contactMode=true; contactModeBtn.classList.replace('bg-gray-500','bg-indigo-600'); directModeBtn.classList.replace('bg-indigo-600','bg-gray-500'); };
-    directModeBtn.click();
-
-    userForm.onsubmit = e=>{
-      e.preventDefault();
-      const n=userForm.fullName.value.trim(), c=userForm.cardNumber.value.trim();
-      if(n&&c){ cardData[n]=c; jsonOutput.textContent = JSON.stringify(cardData,null,2); jsonOutput.classList.remove('hidden'); userForm.reset(); }
-    };
-
-    recordButton.onclick = ()=> {
-      if(mediaRecorder && mediaRecorder.state==='recording') stopRecording();
-      else startRecording();
-    };
-
-    function startRecording(){
-      navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
-        mediaRecorder = new MediaRecorder(stream);
-        audioChunks = [];
-        mediaRecorder.ondataavailable = e=> audioChunks.push(e.data);
-        mediaRecorder.onstop = ()=>{
-          audioBlob = new Blob(audioChunks,{type:'audio/mp4'});
-          sendButton.disabled = false;
-          const url = URL.createObjectURL(audioBlob);
-          audioPlayer.src = url;
-          audioPlayerContainer.classList.remove('hidden');
-        };
-        mediaRecorder.start();
-        animateWaveform();
-        recordIcon.classList.replace('fa-microphone','fa-stop');
-        recordButton.classList.add('recording-animation','bg-red-600','hover:bg-red-700');
-        recordButton.classList.remove('bg-blue-600','hover:bg-blue-700');
-      });
-    }
-
-    function stopRecording(){
-      mediaRecorder.stop();
-      resetWaveform();
-      recordIcon.classList.replace('fa-stop','fa-microphone');
-      recordButton.classList.remove('recording-animation','bg-red-600','hover:bg-red-700');
-      recordButton.classList.add('bg-blue-600','hover:bg-blue-700');
-    }
-
-    sendButton.onclick = async ()=>{
-      sendButton.disabled = true;
-      showToast('در حال ارسال...','info');
-      const fd = new FormData();
-      fd.append('voice', audioBlob, 'recording.m4a');
-      if(contactMode){ const blob = new Blob([JSON.stringify(cardData)],{type:'application/json'}); fd.append('datalist', blob, 'datalist.json'); }
-      try{
-        const res = await fetch(`https://api.example.com/${currentPath}${contactMode?'/type/number':''}`,{method:'POST',body:fd});
-        if(!res.ok) throw new Error();
-        const text = res.headers.get('result');
-        const audio = await res.blob();
-        apiResponse.classList.remove('hidden');
-        responseText.textContent = text || '';
-        addHistory(text);
-        if(audio.size){ responseAudio.src = URL.createObjectURL(audio); responseAudio.classList.remove('hidden'); }
-        resetApiPath();
-        showToast('ارسال موفق','success');
-      }catch{
-        showToast('خطا در ارسال','error');
-        resetApiPath();
-      }finally{
-        sendButton.disabled = false;
+      function showToast(msg, type) {
+        statusToast.textContent = msg;
+        statusToast.className = 'fixed bottom-6 left-1/2 transform -translate-x-1/2 text-white px-6 py-3 rounded-lg shadow-xl';
+        statusToast.classList.add(type==='success'?'bg-green-500':type==='error'?'bg-red-500':'bg-blue-500','opacity-100');
+        setTimeout(() => statusToast.classList.remove('opacity-100'),3000);
       }
-    };
 
-    checkMic();
-  });
+      function startRecording() {
+        navigator.mediaDevices.getUserMedia({audio:true}).then(stream => {
+          mediaRecorder = new MediaRecorder(stream);
+          audioChunks = [];
+          mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+          mediaRecorder.onstop = () => {
+            audioBlob = new Blob(audioChunks,{type:'audio/mp4'});
+            sendButton.disabled = false;
+            const url = URL.createObjectURL(audioBlob);
+            audioPlayer.src = url;
+            audioPlayerContainer.classList.remove('hidden');
+          };
+          mediaRecorder.start();
+          // start waveform
+          waveform.classList.remove('hidden');
+          animId = setInterval(() => waveBars.forEach(b => b.style.height = (Math.random()*60+10)+'px'),100);
+          // UI
+          recordIcon.classList.replace('fa-microphone','fa-stop');
+          recordButton.classList.add('recording-animation','bg-red-600','hover:bg-red-700');
+          recordButton.classList.remove('bg-blue-600','hover:bg-blue-700');
+        });
+      }
+
+      function stopRecording() {
+        mediaRecorder.stop();
+        clearInterval(animId);
+        waveBars.forEach(b => b.style.height = '10px');
+        waveform.classList.add('hidden');
+        recordIcon.classList.replace('fa-stop','fa-microphone');
+        recordButton.classList.remove('recording-animation','bg-red-600','hover:bg-red-700');
+        recordButton.classList.add('bg-blue-600','hover:bg-blue-700');
+      }
+
+      // Event Listeners
+      dasturBtn.onclick = () => { formContainer.classList.add('hidden'); mainContainer.classList.remove('hidden'); };
+      formBtn.onclick = () => { mainContainer.classList.add('hidden'); formContainer.classList.remove('hidden'); };
+      directModeBtn.onclick = () => { contactMode=false; directModeBtn.classList.replace('bg-gray-500','bg-indigo-600'); contactModeBtn.classList.replace('bg-indigo-600','bg-gray-500'); };
+      contactModeBtn.onclick = () => { contactMode=true; contactModeBtn.classList.replace('bg-gray-500','bg-indigo-600'); directModeBtn.classList.replace('bg-indigo-600','bg-gray-500'); };
+      recordButton.onclick = () => mediaRecorder && mediaRecorder.state==='recording' ? stopRecording() : startRecording();
+
+      sendButton.onclick = async () => {
+        sendButton.disabled=true;
+        showToast('در حال ارسال...','info');
+        const fd = new FormData();
+        fd.append('voice', audioBlob, 'rec.m4a');
+        if(contactMode) { const blob=new Blob([JSON.stringify(cardData)],{type:'application/json'}); fd.append('datalist', blob, 'datalist.json'); }
+        try {
+          const res = await fetch(`https://api.example.com/${currentPath}${contactMode?'/type/number':''}`,{method:'POST',body:fd});
+          if(!res.ok) throw new Error();
+          const text = res.headers.get('result');
+          const audio = await res.blob();
+          apiResponse.classList.remove('hidden');
+          responseText.textContent = text || '';
+          if(audio.size){ responseAudio.src = URL.createObjectURL(audio); responseAudio.classList.remove('hidden'); }
+          clearInterval(animId);
+          showToast('ارسال موفق','success');
+        } catch { showToast('خطا در ارسال','error'); }
+        finally { sendButton.disabled=false; }
+      };
+
+      // Form
+      userForm.onsubmit = e => { e.preventDefault(); const n=userForm.fullName.value.trim(), c=userForm.cardNumber.value.trim(); if(n&&c){ cardData[n]=c; jsonOutput.textContent=JSON.stringify(cardData,null,2); jsonOutput.classList.remove('hidden'); userForm.reset(); }};
+
+      // Microphone
+      navigator.mediaDevices && checkMic();
+    });
   </script></body>
 </html>
